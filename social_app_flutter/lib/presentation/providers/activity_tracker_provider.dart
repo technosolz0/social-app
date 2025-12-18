@@ -1,0 +1,217 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:uuid/uuid.dart';
+
+import '../../data/models/activity_model.dart';
+import '../../data/services/local_storage_service.dart';
+
+part 'activity_tracker_provider.g.dart';
+
+// Local Storage Service Provider
+final localStorageServiceProvider = Provider<LocalStorageService>((ref) {
+  return LocalStorageService();
+});
+
+@riverpod
+class ActivityTracker extends _$ActivityTracker {
+  LocalStorageService get _storage => ref.read(localStorageServiceProvider);
+
+  @override
+  List<ActivityModel> build() {
+    // Load activities from local storage on initialization
+    _loadActivitiesFromStorage();
+    return [];
+  }
+
+  Future<void> _loadActivitiesFromStorage() async {
+    try {
+      final activities = _storage.getRecentActivities(limit: 100);
+      state = activities;
+    } catch (e) {
+      print('Failed to load activities from storage: $e');
+    }
+  }
+
+  // Track different activities
+  void trackPostView(String postId) {
+    _track('post_view', {'post_id': postId}, postId: postId);
+  }
+
+  void trackPostLike(String postId) {
+    _track('post_like', {'post_id': postId}, postId: postId);
+  }
+
+  void trackStoryView(String storyId) {
+    _track('story_view', {'story_id': storyId}, storyId: storyId);
+  }
+
+  void trackSearch(String query) {
+    _track('search', {'query': query});
+  }
+
+  void trackProfileView(String userId) {
+    _track('profile_view', {'user_id': userId}, targetUserId: userId);
+  }
+
+  void trackMessageSent() {
+    _track('message_sent', {});
+  }
+
+  void trackLogin() {
+    _track('login', {});
+  }
+
+  void trackVideoWatchTime(String postId, int seconds) {
+    _track('video_watch', {
+      'post_id': postId,
+      'watch_time': seconds,
+    }, postId: postId);
+  }
+
+  // Private method to create activity
+  void _track(
+    String activityType,
+    Map<String, dynamic> metadata, {
+    String? postId,
+    String? storyId,
+    String? targetUserId,
+  }) {
+    final activity = ActivityModel(
+      id: const Uuid().v4(),
+      userId: 'current_user_id', // Will be updated when user logs in
+      activityType: activityType,
+      metadata: metadata,
+      timestamp: DateTime.now(),
+      postId: postId,
+      storyId: storyId,
+      targetUserId: targetUserId,
+    );
+
+    // Add to local state immediately for UI responsiveness
+    state = [...state, activity];
+
+    // Save to local storage
+    _saveActivityToStorage(activity);
+
+    // Send to server (async, fire and forget)
+    _sendToServer(activity);
+  }
+
+  Future<void> _saveActivityToStorage(ActivityModel activity) async {
+    try {
+      await _storage.saveActivity(activity);
+    } catch (e) {
+      print('Failed to save activity to storage: $e');
+    }
+  }
+
+  Future<void> _sendToServer(ActivityModel activity) async {
+    try {
+      // TODO: Implement API call to backend
+      // final activityRepository = ref.read(activityRepositoryProvider);
+      // await activityRepository.trackActivity(activity);
+
+      // For now, just print (replace with actual API call)
+      print('Tracking activity: ${activity.activityType} with metadata: ${activity.metadata}');
+    } catch (e) {
+      print('Failed to track activity: $e');
+      // Could implement retry logic here
+    }
+  }
+
+  // Sync activities with server
+  Future<void> syncActivities() async {
+    try {
+      // TODO: Implement sync with backend
+      // Get unsynced activities and send to server
+      // Update sync timestamp
+      await _storage.saveLastSyncTimestamp(DateTime.now());
+      print('Activities synced with server');
+    } catch (e) {
+      print('Failed to sync activities: $e');
+    }
+  }
+
+  // Get activities by type
+  List<ActivityModel> getByType(String type) {
+    return state.where((a) => a.activityType == type).toList();
+  }
+
+  // Get recent searches
+  List<String> getRecentSearches({int limit = 10}) {
+    return state
+        .where((a) => a.activityType == 'search')
+        .take(limit)
+        .map((a) => a.metadata?['query'] as String)
+        .toList();
+  }
+
+  // Get activity statistics
+  Map<String, int> getActivityStats() {
+    return _storage.getActivityStats();
+  }
+
+  // Clear history
+  Future<void> clearHistory() async {
+    state = [];
+    await _storage.clearAllActivities();
+  }
+
+  // Load more activities (for pagination)
+  Future<void> loadMoreActivities({int limit = 50}) async {
+    try {
+      final moreActivities = _storage.getRecentActivities(limit: state.length + limit);
+      state = moreActivities;
+    } catch (e) {
+      print('Failed to load more activities: $e');
+    }
+  }
+}
+
+
+
+// ============================================
+// 🎓 KEY RIVERPOD CONCEPTS SUMMARY
+// ============================================
+
+/*
+1️⃣ WATCH vs READ vs LISTEN
+
+WATCH: Rebuilds widget when state changes
+  final user = ref.watch(authProvider).user;
+
+READ: One-time read, no rebuilds
+  ref.read(authProvider.notifier).login();
+
+LISTEN: Execute code when state changes (not rebuild)
+  ref.listen(authProvider, (prev, next) {
+    if (next.isAuthenticated) {
+      Navigator.push(...);
+    }
+  });
+
+2️⃣ PROVIDER TYPES
+
+Provider          - Read-only, never changes
+StateProvider     - Simple state (counter, toggle)
+FutureProvider    - Async data (API calls)
+StreamProvider    - Real-time data (WebSocket)
+NotifierProvider  - Complex state with logic
+
+3️⃣ STATE MANAGEMENT PATTERN
+
+1. Define State class (what data to hold)
+2. Create Notifier class (logic to change state)
+3. Create Provider (makes it available)
+4. Watch in widgets (UI reacts to changes)
+
+4️⃣ BEST PRACTICES
+
+✅ Keep providers small and focused
+✅ Use const constructors when possible
+✅ Dispose streams/timers in notifier
+✅ Use copyWith for immutable updates
+✅ Handle errors gracefully
+✅ Cache data when appropriate
+✅ Use family for dynamic providers
+*/

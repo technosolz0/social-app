@@ -1,0 +1,166 @@
+class UserModel {
+  final String id;
+  final String username;
+  final String email;
+  final String? avatar;
+  final String? bio;
+  final String? website;
+  final int followersCount;
+  final int followingCount;
+  final int postsCount;
+  final bool isVerified;
+  final bool isPrivate;
+  final GamificationModel? gamification;
+
+  const UserModel({
+    required this.id,
+    required this.username,
+    required this.email,
+    this.avatar,
+    this.bio,
+    this.website,
+    this.followersCount = 0,
+    this.followingCount = 0,
+    this.postsCount = 0,
+    this.isVerified = false,
+    this.isPrivate = false,
+    this.gamification,
+  });
+
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      id: json['id'] as String,
+      username: json['username'] as String,
+      email: json['email'] as String,
+      avatar: json['avatar'] as String?,
+      bio: json['bio'] as String?,
+      website: json['website'] as String?,
+      followersCount: json['followersCount'] as int? ?? 0,
+      followingCount: json['followingCount'] as int? ?? 0,
+      postsCount: json['postsCount'] as int? ?? 0,
+      isVerified: json['isVerified'] as bool? ?? false,
+      isPrivate: json['isPrivate'] as bool? ?? false,
+      gamification: json['gamification'] != null
+          ? GamificationModel.fromJson(json['gamification'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'username': username,
+      'email': email,
+      'avatar': avatar,
+      'bio': bio,
+      'website': website,
+      'followersCount': followersCount,
+      'followingCount': followingCount,
+      'postsCount': postsCount,
+      'isVerified': isVerified,
+      'isPrivate': isPrivate,
+      'gamification': gamification?.toJson(),
+    };
+  }
+
+  UserModel copyWith({
+    String? id,
+    String? username,
+    String? email,
+    String? avatar,
+    String? bio,
+    String? website,
+    int? followersCount,
+    int? followingCount,
+    int? postsCount,
+    bool? isVerified,
+    bool? isPrivate,
+    GamificationModel? gamification,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      username: username ?? this.username,
+      email: email ?? this.email,
+      avatar: avatar ?? this.avatar,
+      bio: bio ?? this.bio,
+      website: website ?? this.website,
+      followersCount: followersCount ?? this.followersCount,
+      followingCount: followingCount ?? this.followingCount,
+      postsCount: postsCount ?? this.postsCount,
+      isVerified: isVerified ?? this.isVerified,
+      isPrivate: isPrivate ?? this.isPrivate,
+      gamification: gamification ?? this.gamification,
+    );
+  }
+}
+
+class GamificationModel {
+  final int totalPoints;
+  final int currentLevel;
+  final int currentStreak;
+  final List<BadgeModel> badges;
+
+  const GamificationModel({
+    this.totalPoints = 0,
+    this.currentLevel = 1,
+    this.currentStreak = 0,
+    this.badges = const [],
+  });
+
+  factory GamificationModel.fromJson(Map<String, dynamic> json) {
+    return GamificationModel(
+      totalPoints: json['totalPoints'] as int? ?? 0,
+      currentLevel: json['currentLevel'] as int? ?? 1,
+      currentStreak: json['currentStreak'] as int? ?? 0,
+      badges: (json['badges'] as List<dynamic>?)
+              ?.map((e) => BadgeModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'totalPoints': totalPoints,
+      'currentLevel': currentLevel,
+      'currentStreak': currentStreak,
+      'badges': badges.map((e) => e.toJson()).toList(),
+    };
+  }
+}
+
+class BadgeModel {
+  final String id;
+  final String name;
+  final String iconUrl;
+  final String rarity;
+  final DateTime earnedAt;
+
+  const BadgeModel({
+    required this.id,
+    required this.name,
+    required this.iconUrl,
+    required this.rarity,
+    required this.earnedAt,
+  });
+
+  factory BadgeModel.fromJson(Map<String, dynamic> json) {
+    return BadgeModel(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      iconUrl: json['iconUrl'] as String,
+      rarity: json['rarity'] as String,
+      earnedAt: DateTime.parse(json['earnedAt'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'iconUrl': iconUrl,
+      'rarity': rarity,
+      'earnedAt': earnedAt.toIso8601String(),
+    };
+  }
+}
