@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:social_app_flutter/data/models/message_model.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../data/models/user_model.dart';
@@ -16,12 +19,12 @@ import '../../widgets/chat/message_bubble.dart' as chat_widgets;
 
 class ChatRoomScreen extends ConsumerStatefulWidget {
   final String conversationId;
-  final UserModel otherUser;
+  final UserModel? otherUser;
 
   const ChatRoomScreen({
     super.key,
     required this.conversationId,
-    required this.otherUser,
+    this.otherUser,
   });
 
   @override
@@ -43,8 +46,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
         title: Row(
           children: [
             CircleAvatar(
-              backgroundImage: widget.otherUser.avatar != null
-                  ? NetworkImage(widget.otherUser.avatar!)
+              backgroundImage: widget.otherUser?.avatar != null
+                  ? NetworkImage(widget.otherUser!.avatar!)
                   : null,
               radius: 18,
             ),
@@ -54,7 +57,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.otherUser.username,
+                    widget.otherUser?.username ?? 'Chat',
                     style: const TextStyle(fontSize: 16),
                   ),
                   const Text(
@@ -127,7 +130,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                   itemBuilder: (context, index) {
                     final message = messages[index];
                     final isMe = message.senderId ==
-                      ref.read(authProvider).user!.id;
+                      ref.read(authNotifierProvider).user!.id;
 
                     return chat_widgets.MessageBubble(
                       message: message,
@@ -304,7 +307,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               Clipboard.setData(ClipboardData(text: message.content ?? ''));
             },
           ),
-          if (message.senderId == ref.read(authProvider).user!.id)
+          if (message.senderId == ref.read(authNotifierProvider).user!.id)
             ListTile(
               leading: const Icon(Icons.delete),
               title: const Text('Unsend'),

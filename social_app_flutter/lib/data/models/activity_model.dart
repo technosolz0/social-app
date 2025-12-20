@@ -138,3 +138,4 @@ class ActivityModel {
   String? getMetadataValue(String key) {
     return metadata?[key]?.toString();
   }
+}

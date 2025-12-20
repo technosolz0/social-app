@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../data/models/user_model.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../../data/services/local_storage_service.dart';
 import 'activity_tracker_provider.dart';
 
@@ -38,11 +39,16 @@ class AuthState {
   }
 }
 
+// Auth Repository Provider
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  return AuthRepository();
+});
+
 // 📌 NOTIFIER: Logic that changes the state
 // Think of this as the "brain" that controls auth
 @riverpod
 class AuthNotifier extends _$AuthNotifier {
-  LocalStorageService get _storage => ref.read(localStorageServiceProvider);
+  AuthRepository get _authRepository => ref.read(authRepositoryProvider);
 
   // Initial state when app starts
   @override
@@ -54,24 +60,19 @@ class AuthNotifier extends _$AuthNotifier {
 
   // 🔐 LOGIN METHOD
   // Called when user taps login button
-  Future<void> login(String email, String password) async {
+  Future<void> login({
+    required String email,
+    required String password,
+  }) async {
     // 1. Show loading indicator
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
       // 2. Call API to login
-      // final authRepository = ref.read(authRepositoryProvider);
-      // final user = await authRepository.login(email, password);
+      await _authRepository.login(email, password);
 
-      // Mock user for now
-      final user = UserModel(
-        id: const Uuid().v4(),
-        username: 'testuser',
-        email: email,
-      );
-
-      // 3. Save token locally
-      await _saveAuthToken('mock_token');
+      // 3. Get user data
+      final user = await _authRepository.getCurrentUser();
 
       // 4. Update state with user data
       state = state.copyWith(
@@ -81,7 +82,7 @@ class AuthNotifier extends _$AuthNotifier {
       );
 
       // 5. Track activity
-      // ref.read(activityTrackerProvider).trackLogin();
+      ref.read(activityTrackerProvider.notifier).trackLogin();
 
     } catch (e) {
       // Handle error
@@ -101,21 +102,15 @@ class AuthNotifier extends _$AuthNotifier {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      // final authRepository = ref.read(authRepositoryProvider);
-      // final user = await authRepository.register(
-      //   username: username,
-      //   email: email,
-      //   password: password,
-      // );
-
-      // Mock user
-      final user = UserModel(
-        id: const Uuid().v4(),
+      // Call API to register
+      await _authRepository.register(
         username: username,
         email: email,
+        password: password,
       );
 
-      await _saveAuthToken('mock_token');
+      // Get user data
+      final user = await _authRepository.getCurrentUser();
 
       state = state.copyWith(
         user: user,
@@ -132,38 +127,30 @@ class AuthNotifier extends _$AuthNotifier {
 
   // 🚪 LOGOUT METHOD
   Future<void> logout() async {
-    await _clearAuthToken();
-    state = const AuthState();
+    try {
+      await _authRepository.logout();
+      state = const AuthState();
+    } catch (e) {
+      // Even if logout fails, clear local state
+      state = const AuthState();
+    }
   }
 
   // Private helper methods
   Future<void> _checkAuthStatus() async {
-    final token = await _getAuthToken();
-    if (token != null) {
-      // Auto-login if token exists
-      // final user = await ref.read(authRepositoryProvider).getCurrentUser();
-      // Mock user
-      final user = UserModel(
-        id: const Uuid().v4(),
-        username: 'testuser',
-        email: 'test@example.com',
-      );
-      state = state.copyWith(
-        user: user,
-        isAuthenticated: true,
-      );
+    try {
+      final hasValidToken = await _authRepository.hasValidToken();
+      if (hasValidToken) {
+        // Get current user data
+        final user = await _authRepository.getCurrentUser();
+        state = state.copyWith(
+          user: user,
+          isAuthenticated: true,
+        );
+      }
+    } catch (e) {
+      // Token is invalid, stay in unauthenticated state
+      state = const AuthState();
     }
-  }
-
-  Future<void> _saveAuthToken(String token) async {
-    await _storage.saveAuthToken(token);
-  }
-
-  Future<String?> _getAuthToken() async {
-    return await _storage.getAuthToken();
-  }
-
-  Future<void> _clearAuthToken() async {
-    await _storage.clearSecureData();
   }
 }

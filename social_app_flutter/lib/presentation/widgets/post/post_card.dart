@@ -56,7 +56,7 @@ class _PostCardState extends ConsumerState<PostCard>
           user: widget.post.user,
           onTap: () {
             // Track profile view
-            ref.read(activityTrackerProvider)
+            ref.read(activityTrackerProvider.notifier)
                 .trackProfileView(widget.post.userId);
             // context.push('/profile/${widget.post.userId}');
           },
@@ -81,7 +81,7 @@ class _PostCardState extends ConsumerState<PostCard>
                 postType: widget.post.postType,
                 onView: () {
                   // Track post view
-                  ref.read(activityTrackerProvider)
+                  ref.read(activityTrackerProvider.notifier)
                       .trackPostView(widget.post.id);
                 },
               ),

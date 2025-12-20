@@ -42,7 +42,7 @@ class StoriesNotifier extends StateNotifier<AsyncValue<List<StoryModel>>> {
   Future<void> _loadStories() async {
     // Mock loading
     await Future.delayed(const Duration(seconds: 1));
-    state = AsyncValue.data([
+    state = const AsyncValue.data([
       StoryModel(
         id: '1',
         user: UserModel(id: '1', username: 'alice', avatar: 'https://picsum.photos/50'),
@@ -129,15 +129,15 @@ class YourStoryCircle extends StatelessWidget {
                 border: Border.all(color: Colors.grey, width: 2),
               ),
               child: Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white,
                 ),
                 padding: const EdgeInsets.all(2),
-                child: const CircleAvatar(
+                child: CircleAvatar(
                   radius: 32,
                   backgroundColor: Colors.grey[300],
-                  child: Icon(Icons.add, color: Colors.black),
+                  child: const Icon(Icons.add, color: Colors.black),
                 ),
               ),
             ),

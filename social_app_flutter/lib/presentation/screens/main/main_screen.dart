@@ -1,18 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
-import '../auth/login_screen.dart';
-import '../camera/camera_screen.dart';
 import 'home_screen.dart';
-import '../main/search_screen.dart';
-import '../reels/reels_screen.dart';
-import '../profile/profile_screen.dart';
-
-// ============================================
-// lib/presentation/screens/main/main_screen.dart
-// Instagram-like bottom navigation
-// ============================================
+import 'search_screen.dart';
+import 'reels_screen.dart';
+import 'activity_screen.dart';
+import 'profile_screen.dart';
+import '../camera/camera_screen.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -24,13 +17,12 @@ class MainScreen extends ConsumerStatefulWidget {
 class _MainScreenState extends ConsumerState<MainScreen> {
   int _currentIndex = 0;
 
-  // All main screens
-  final List<Widget> _screens = [
-    const HomeScreen(),        // Feed
-    const SearchScreen(),      // Explore
-    const Container(),         // Camera (opens modal)
-    const ReelsScreen(),       // Reels
-    const ProfileScreen(),     // Profile
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    SearchScreen(),
+    ReelsScreen(),
+    ActivityScreen(),
+    ProfileScreen(),
   ];
 
   @override
@@ -70,9 +62,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             label: 'Create',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.movie_outlined),
-            activeIcon: Icon(Icons.movie),
-            label: 'Reels',
+            icon: Icon(Icons.favorite_border),
+            activeIcon: Icon(Icons.favorite),
+            label: 'Activity',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),

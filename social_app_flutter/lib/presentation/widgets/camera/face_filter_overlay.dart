@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 // ============================================
 // lib/presentation/widgets/camera/face_filter_overlay.dart
-// AR Face Filters using ML Kit
+// AR Face Filters (Mock Implementation)
 // ============================================
 
 class FaceFilterOverlay extends StatefulWidget {
@@ -16,78 +15,85 @@ class FaceFilterOverlay extends StatefulWidget {
 }
 
 class _FaceFilterOverlayState extends State<FaceFilterOverlay> {
-  final FaceDetector _faceDetector = GoogleMlKit.vision.faceDetector(
-    FaceDetectorOptions(
-      enableContours: true,
-      enableLandmarks: true,
-    ),
-  );
-
-  List<Face>? _faces;
+  // Mock face detection - in a real app, this would use ML Kit
+  List<Rect>? _faceRects;
 
   @override
-  Widget build(BuildContext context) {
-    if (widget.filter == null || _faces == null) {
-      return const SizedBox.shrink();
+  void initState() {
+    super.initState();
+    // Mock face detection - simulate finding a face in the center
+    if (widget.filter != null) {
+      _faceRects = [
+         Rect.fromCenter(
+          center: Offset(0.5, 0.4), // Center of screen
+          width: 0.3,
+          height: 0.4,
+        ),
+      ];
     }
-
-    return CustomPaint(
-      painter: FaceFilterPainter(
-        faces: _faces!,
-        filter: widget.filter!,
-      ),
-    );
   }
 
   @override
-  void dispose() {
-    _faceDetector.close();
-    super.dispose();
+  Widget build(BuildContext context) {
+    if (widget.filter == null || _faceRects == null) {
+      return const SizedBox.shrink();
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return CustomPaint(
+          size: Size(constraints.maxWidth, constraints.maxHeight),
+          painter: FaceFilterPainter(
+            faceRects: _faceRects!,
+            filter: widget.filter!,
+            canvasSize: Size(constraints.maxWidth, constraints.maxHeight),
+          ),
+        );
+      },
+    );
   }
 }
 
 class FaceFilterPainter extends CustomPainter {
-  final List<Face> faces;
+  final List<Rect> faceRects;
   final String filter;
+  final Size canvasSize;
 
   FaceFilterPainter({
-    required this.faces,
+    required this.faceRects,
     required this.filter,
+    required this.canvasSize,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0
-      ..color = Colors.red;
-
-    for (final face in faces) {
-      final rect = face.boundingBox;
-
-      // Draw face bounding box
-      canvas.drawRect(rect, paint);
+    for (final faceRect in faceRects) {
+      // Convert normalized coordinates to actual canvas coordinates
+      final actualRect = Rect.fromLTRB(
+        faceRect.left * canvasSize.width,
+        faceRect.top * canvasSize.height,
+        faceRect.right * canvasSize.width,
+        faceRect.bottom * canvasSize.height,
+      );
 
       // Apply filter overlay based on filter type
-      _applyFilterOverlay(canvas, face, filter);
+      _applyFilterOverlay(canvas, actualRect, filter);
     }
   }
 
-  void _applyFilterOverlay(Canvas canvas, Face face, String filter) {
-    final rect = face.boundingBox;
-
+  void _applyFilterOverlay(Canvas canvas, Rect faceRect, String filter) {
     switch (filter) {
       case 'Glasses':
-        _drawGlasses(canvas, rect);
+        _drawGlasses(canvas, faceRect);
         break;
       case 'Hat':
-        _drawHat(canvas, rect);
+        _drawHat(canvas, faceRect);
         break;
       case 'Mustache':
-        _drawMustache(canvas, rect);
+        _drawMustache(canvas, faceRect);
         break;
       case 'Crown':
-        _drawCrown(canvas, rect);
+        _drawCrown(canvas, faceRect);
         break;
       default:
         // No overlay

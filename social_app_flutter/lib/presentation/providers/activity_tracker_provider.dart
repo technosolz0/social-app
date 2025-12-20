@@ -4,12 +4,18 @@ import 'package:uuid/uuid.dart';
 
 import '../../data/models/activity_model.dart';
 import '../../data/services/local_storage_service.dart';
+import '../../data/services/storage_service.dart';
 
 part 'activity_tracker_provider.g.dart';
 
 // Local Storage Service Provider
 final localStorageServiceProvider = Provider<LocalStorageService>((ref) {
   return LocalStorageService();
+});
+
+// Storage Service Provider
+final storageServiceProvider = Provider<StorageService>((ref) {
+  return StorageService();
 });
 
 @riverpod
@@ -178,13 +184,13 @@ class ActivityTracker extends _$ActivityTracker {
 1️⃣ WATCH vs READ vs LISTEN
 
 WATCH: Rebuilds widget when state changes
-  final user = ref.watch(authProvider).user;
+  final user = ref.watch(authNotifierProvider).user;
 
 READ: One-time read, no rebuilds
-  ref.read(authProvider.notifier).login();
+  ref.read(authNotifierProvider.notifier).login();
 
 LISTEN: Execute code when state changes (not rebuild)
-  ref.listen(authProvider, (prev, next) {
+  ref.listen(authNotifierProvider, (prev, next) {
     if (next.isAuthenticated) {
       Navigator.push(...);
     }

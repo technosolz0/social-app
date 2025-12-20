@@ -8,7 +8,7 @@ import '../../data/models/user_model.dart';
 part 'post_provider.g.dart';
 
 @riverpod
-class PostFeedNotifier extends _$PostFeedNotifier {
+class PostFeedNotifier extends AutoDisposeAsyncNotifier<List<PostModel>> {
   @override
   FutureOr<List<PostModel>> build() async {
     // Fetch initial posts when provider is created
@@ -68,7 +68,7 @@ class PostFeedNotifier extends _$PostFeedNotifier {
     // Mock data
     await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
 
-    final mockUser = UserModel(
+    const mockUser = UserModel(
       id: '1',
       username: 'testuser',
       email: 'test@example.com',
@@ -95,9 +95,7 @@ class PostFeedNotifier extends _$PostFeedNotifier {
   }
 }
 
-final postFeedProvider = AsyncNotifierProvider<PostFeedNotifier, List<PostModel>>(
-  () => PostFeedNotifier(),
-);
+
 
 // ============================================
 // 🎓 USING ASYNC PROVIDERS IN WIDGETS
@@ -106,11 +104,11 @@ final postFeedProvider = AsyncNotifierProvider<PostFeedNotifier, List<PostModel>
 class FeedScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final postsAsync = ref.watch(postFeedProvider);
+    final postsAsync = ref.watch(postFeedNotifierProvider);
 
     return postsAsync.when(
       // ⏳ LOADING: Show loading indicator
-      loading: () => Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
 
       // ❌ ERROR: Show error message
       error: (error, stack) => Center(
@@ -120,9 +118,9 @@ class FeedScreen extends ConsumerWidget {
             ElevatedButton(
               onPressed: () {
                 // Retry
-                ref.invalidate(postFeedProvider);
+                ref.invalidate(postFeedNotifierProvider);
               },
-              child: Text('Retry'),
+              child: const Text('Retry'),
             ),
           ],
         ),
@@ -131,13 +129,13 @@ class FeedScreen extends ConsumerWidget {
       // ✅ DATA: Show posts
       data: (posts) {
         if (posts.isEmpty) {
-          return Center(child: Text('No posts yet'));
+          return const Center(child: Text('No posts yet'));
         }
 
         return RefreshIndicator(
           onRefresh: () async {
             // Pull to refresh
-            await ref.read(postFeedProvider.notifier).refresh();
+            await ref.read(postFeedNotifierProvider.notifier).refresh();
           },
           child: ListView.builder(
             itemCount: posts.length,
@@ -146,8 +144,8 @@ class FeedScreen extends ConsumerWidget {
               return PostCard(
                 post: post,
                 onLike: () {
-                  ref.read(postFeedProvider.notifier).likePost(post.id);
-                },
+                  ref.read(postFeedNotifierProvider.notifier).likePost(post.id);
+                }, onComment: () {  },
               );
             },
           ),
@@ -162,12 +160,12 @@ class PostCard extends StatelessWidget {
   final PostModel post;
   final VoidCallback onLike;
 
-  const PostCard({required this.post, required this.onLike});
+  const PostCard({required this.post, required this.onLike, required Null Function() onComment});
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.all(8),
+      margin: const EdgeInsets.all(8),
       child: Column(
         children: [
           ListTile(
@@ -181,7 +179,7 @@ class PostCard extends StatelessWidget {
             Image.network(post.mediaUrl, height: 200, width: double.infinity, fit: BoxFit.cover),
           if (post.caption != null)
             Padding(
-              padding: EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
               child: Text(post.caption!),
             ),
           Row(
@@ -194,9 +192,9 @@ class PostCard extends StatelessWidget {
                 onPressed: onLike,
               ),
               Text('${post.likesCount}'),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               IconButton(
-                icon: Icon(Icons.comment),
+                icon: const Icon(Icons.comment),
                 onPressed: () {},
               ),
               Text('${post.commentsCount}'),

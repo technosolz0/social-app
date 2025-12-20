@@ -11,11 +11,20 @@ import '../../data/models/user_model.dart';
 part 'chat_provider.g.dart';
 
 @riverpod
-class ChatNotifier extends _$ChatNotifier {
+class ChatNotifier extends FamilyStreamNotifier<List<MessageModel>, String> {
+  late String _conversationId;
+
   @override
   Stream<List<MessageModel>> build(String conversationId) {
+    _conversationId = conversationId;
     // Return real-time stream of messages
     return _getMessagesStream(conversationId);
+  }
+
+  String get currentConversationId => _conversationId;
+
+  set conversationId(String value) {
+    _conversationId = value;
   }
 
   // Send message
@@ -27,9 +36,9 @@ class ChatNotifier extends _$ChatNotifier {
   }) async {
     final message = MessageModel(
       id: const Uuid().v4(),
-      conversationId: conversationId,
-      senderId: 'current_user_id', // ref.read(authProvider).user!.id,
-      sender: UserModel(id: '1', username: 'current_user', email: 'user@example.com'), // ref.read(authProvider).user!,
+      conversationId: _conversationId,
+      senderId: 'current_user_id', // ref.read(authNotifierProvider).user!.id,
+      sender: const UserModel(id: '1', username: 'current_user', email: 'user@example.com'), // ref.read(authNotifierProvider).user!,
       messageType: messageType,
       content: content,
       mediaUrl: mediaUrl,
@@ -60,8 +69,8 @@ class ChatNotifier extends _$ChatNotifier {
     final messages = <MessageModel>[];
 
     // Add some mock messages
-    final mockUser1 = UserModel(id: '1', username: 'alice', email: 'alice@example.com');
-    final mockUser2 = UserModel(id: '2', username: 'bob', email: 'bob@example.com');
+    const mockUser1 = UserModel(id: '1', username: 'alice', email: 'alice@example.com');
+    const mockUser2 = UserModel(id: '2', username: 'bob', email: 'bob@example.com');
 
     messages.addAll([
       MessageModel(
@@ -100,12 +109,6 @@ class ChatNotifier extends _$ChatNotifier {
   void _addMessageToStream(MessageModel message) {
     _messageController.add(message);
   }
-
-  @override
-  void dispose() {
-    _messageController.close();
-    super.dispose();
-  }
 }
 
 final chatProvider = StreamNotifierProvider.family<
@@ -121,19 +124,19 @@ final chatProvider = StreamNotifierProvider.family<
 class ChatRoomScreen extends ConsumerWidget {
   final String conversationId;
 
-  const ChatRoomScreen({required this.conversationId});
+  const ChatRoomScreen({super.key, required this.conversationId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final messagesAsync = ref.watch(chatProvider(conversationId));
 
     return Scaffold(
-      appBar: AppBar(title: Text('Chat')),
+      appBar: AppBar(title: const Text('Chat')),
       body: Column(
         children: [
           Expanded(
             child: messagesAsync.when(
-              loading: () => Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(child: Text('Error: $error')),
               data: (messages) {
                 return ListView.builder(
@@ -164,7 +167,7 @@ class ChatRoomScreen extends ConsumerWidget {
 class MessageBubble extends StatelessWidget {
   final MessageModel message;
 
-  const MessageBubble({required this.message});
+  const MessageBubble({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -173,8 +176,8 @@ class MessageBubble extends StatelessWidget {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        padding: EdgeInsets.all(12),
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isMe ? Colors.blue : Colors.grey[300],
           borderRadius: BorderRadius.circular(16),
@@ -191,7 +194,7 @@ class MessageBubble extends StatelessWidget {
 class ChatInput extends StatefulWidget {
   final Function(String) onSend;
 
-  const ChatInput({required this.onSend});
+  const ChatInput({super.key, required this.onSend});
 
   @override
   _ChatInputState createState() => _ChatInputState();
@@ -203,7 +206,7 @@ class _ChatInputState extends State<ChatInput> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(8),
+      padding: const EdgeInsets.all(8),
       child: Row(
         children: [
           Expanded(
@@ -217,7 +220,7 @@ class _ChatInputState extends State<ChatInput> {
               ),
             ),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           FloatingActionButton(
             onPressed: () {
               if (_controller.text.isNotEmpty) {
@@ -225,7 +228,7 @@ class _ChatInputState extends State<ChatInput> {
                 _controller.clear();
               }
             },
-            child: Icon(Icons.send),
+            child: const Icon(Icons.send),
           ),
         ],
       ),
