@@ -8,7 +8,7 @@ import 'presentation/screens/main/main_screen.dart';
 import 'presentation/screens/post/create_post_screen.dart';
 import 'presentation/screens/post/post_detail_screen.dart';
 import 'presentation/screens/profile/edit_profile_screen.dart';
-import 'presentation/screens/settings/settings_screen.dart';
+// import 'presentation/screens/settings/settings_screen.dart';
 import 'presentation/screens/camera/camera_screen.dart';
 import 'presentation/screens/chat/chats_list_screen.dart';
 import 'presentation/screens/chat/chat_room_screen.dart';
@@ -85,7 +85,8 @@ class SocialApp extends ConsumerWidget {
         ),
         GoRoute(
           path: '/settings',
-          builder: (context, state) => const SettingsScreen(),
+          builder: (context, state) => const EditProfileScreen(),
+          // builder: (context, state) => const SettingsScreen(),
         ),
         GoRoute(
           path: '/camera',
