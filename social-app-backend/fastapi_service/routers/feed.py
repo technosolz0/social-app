@@ -1,9 +1,15 @@
 from fastapi import APIRouter, Depends, Query
 from typing import List, Optional
-from ..services.feed_ranker import FeedRanker
-from ..services.cache_service import CacheService
-from ..models.schemas import FeedPost, FeedResponse
-from ..dependencies import verify_token, get_redis
+import sys
+import os
+
+# Add the parent directory to Python path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from services.feed_ranker import FeedRanker
+from services.cache_service import CacheService
+from models.schemas import FeedPost, FeedResponse
+from dependencies import verify_token, get_redis
 
 router = APIRouter()
 

@@ -363,24 +363,24 @@ ENV/
 Thumbs.db
 
 # Project specific
-social_app_flutter/build/
-social_app_flutter/.dart_tool/
-social_app_flutter/.flutter-plugins-dependencies
-social_app_flutter/pub-cache/
-social_app_flutter/pub/
-social_app_flutter/coverage/
+instachat/build/
+instachat/.dart_tool/
+instachat/.flutter-plugins-dependencies
+instachat/pub-cache/
+instachat/pub/
+instachat/coverage/
 
 # Android Studio
-social_app_flutter/android/app/debug/
-social_app_flutter/android/app/profile/
-social_app_flutter/android/app/release/
+instachat/android/app/debug/
+instachat/android/app/profile/
+instachat/android/app/release/
 
 # iOS
-social_app_flutter/ios/Flutter/.last_build_id
+instachat/ios/Flutter/.last_build_id
 
 # Generated files
-social_app_flutter/lib/data/models/*.g.dart
-social_app_flutter/lib/presentation/providers/*.g.dart
+instachat/lib/data/models/*.g.dart
+instachat/lib/presentation/providers/*.g.dart
 
 # Test coverage
 coverage/

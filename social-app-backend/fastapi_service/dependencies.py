@@ -1,7 +1,13 @@
 from fastapi import Header, HTTPException
 import redis
 import asyncpg
-from .config import settings
+import sys
+import os
+
+# Add the current directory to Python path for imports
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from config import settings
 
 # Redis connection pool
 redis_pool = redis.ConnectionPool.from_url(settings.REDIS_URL)

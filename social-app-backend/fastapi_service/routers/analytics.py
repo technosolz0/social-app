@@ -1,8 +1,13 @@
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
-from ..dependencies import verify_token
 from typing import Optional
 import requests
 import os
+import sys
+
+# Add the parent directory to Python path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from dependencies import verify_token
 
 router = APIRouter()
 

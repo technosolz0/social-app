@@ -6,17 +6,13 @@ from .base import *
 # Development specific settings
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '192.168.43.227', '10.194.199.167']
 
-# Database
+# Database - Using SQLite for local development
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='social_app'),
-        'USER': config('DB_USER', default='social_user'),
-        'PASSWORD': config('DB_PASSWORD', default='social_password'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -31,6 +27,12 @@ CORS_ALLOWED_ORIGINS += [
     "http://127.0.0.1:5173",
 ]
 
+# REST Framework - Add session authentication for DRF browsable API
+REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = (
+    'rest_framework.authentication.SessionAuthentication',
+    'rest_framework_simplejwt.authentication.JWTAuthentication',
+)
+
 # Email backend for development (console)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -40,6 +42,34 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'user': '10000/hour'
 }
 
-# Development logging
-LOGGING['handlers']['console']['level'] = 'DEBUG'
-LOGGING['loggers']['django']['level'] = 'DEBUG'
+# Channels - Using in-memory backend for local development
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
+
+# Cache - Using in-memory cache for local development
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
+# Celery - Using in-memory broker for local development
+CELERY_BROKER_URL = 'memory://'
+CELERY_RESULT_BACKEND = 'cache+memory://'
+
+# Development logging - reduced verbosity
+LOGGING['handlers']['console']['level'] = 'INFO'
+LOGGING['loggers']['django']['level'] = 'INFO'
+LOGGING['loggers']['django.template'] = {
+    'handlers': ['console'],
+    'level': 'WARNING',
+    'propagate': False,
+}
+LOGGING['loggers']['django.server'] = {
+    'handlers': ['console'],
+    'level': 'INFO',
+    'propagate': False,
+}

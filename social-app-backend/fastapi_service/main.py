@@ -2,8 +2,14 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 import uvicorn
-from .config import settings
-from .routers import feed, recommendations, analytics
+import sys
+import os
+
+# Add the current directory to Python path for imports
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from config import settings
+from routers import feed, recommendations, analytics
 
 app = FastAPI(title="Social App High-Performance API", version="1.0.0")
 
@@ -30,4 +36,5 @@ def health_check():
     return {"status": "healthy"}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001, reload=True)

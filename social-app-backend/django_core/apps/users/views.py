@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from .models import CustomUser, UserProfile
 from .serializers import (UserSerializer, UserDetailSerializer,
                           UserRegistrationSerializer, UserProfileSerializer)
@@ -24,14 +25,91 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserDetailSerializer
         return UserSerializer
 
+    @extend_schema(
+        summary="User Login",
+        description="Simple login with username/email and password. Returns JWT tokens.",
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "identifier": {
+                        "type": "string",
+                        "description": "Username or email address",
+                        "example": "alice@example.com"
+                    },
+                    "password": {
+                        "type": "string",
+                        "description": "User password",
+                        "example": "testpass123"
+                    }
+                },
+                "required": ["identifier", "password"]
+            }
+        },
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "access": {"type": "string", "description": "JWT access token"},
+                    "refresh": {"type": "string", "description": "JWT refresh token"},
+                    "user": {"$ref": "#/components/schemas/User"}
+                }
+            },
+            401: {
+                "type": "object",
+                "properties": {
+                    "error": {"type": "string", "example": "Invalid credentials"}
+                }
+            }
+        },
+        examples=[
+            OpenApiExample(
+                "Login with email",
+                value={
+                    "identifier": "alice@example.com",
+                    "password": "testpass123"
+                }
+            ),
+            OpenApiExample(
+                "Login with username",
+                value={
+                    "identifier": "alice",
+                    "password": "testpass123"
+                }
+            )
+        ]
+    )
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
-        """Login endpoint"""
-        email = request.data.get('email')
+        """Simple login - accepts username or email and password"""
+        identifier = request.data.get('identifier')
         password = request.data.get('password')
 
-        user = authenticate(email=email, password=password)
+        if not identifier or not password:
+            return Response(
+                {'error': 'Identifier and password are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Since USERNAME_FIELD = 'email', we need to handle authentication differently
+        # First try to authenticate with identifier as email
+        user = authenticate(username=identifier, password=password)
+
+        # If that fails, try to find user by username and authenticate with their email
+        if user is None:
+            try:
+                found_user = CustomUser.objects.get(username=identifier)
+                user = authenticate(username=found_user.email, password=password)
+            except CustomUser.DoesNotExist:
+                pass
+
         if user:
+            # Check if user should be auto-verified (1M followers)
+            if not user.is_verified and hasattr(user, 'profile'):
+                if user.profile.followers_count >= 1000000:
+                    user.is_verified = True
+                    user.save()
+
             refresh = RefreshToken.for_user(user)
             return Response({
                 'access': str(refresh.access_token),

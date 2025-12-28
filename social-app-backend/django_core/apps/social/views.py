@@ -3,7 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Follow, Like, Comment
-from .serializers import FollowSerializer, CommentSerializer
+from .serializers import FollowSerializer, LikeSerializer, CommentSerializer
+from apps.users.models import CustomUser
 
 class FollowViewSet(viewsets.ModelViewSet):
     queryset = Follow.objects.all()
@@ -27,6 +28,23 @@ class FollowViewSet(viewsets.ModelViewSet):
         )
 
         if created:
+            # Update follower counts
+            request.user.profile.following_count += 1
+            request.user.profile.save()
+
+            try:
+                following_user = CustomUser.objects.get(id=following_id)
+                following_user.profile.followers_count += 1
+
+                # Auto-verify if followers reach 1,000,000
+                if not following_user.is_verified and following_user.profile.followers_count >= 1000000:
+                    following_user.is_verified = True
+                    following_user.save()
+
+                following_user.profile.save()
+            except CustomUser.DoesNotExist:
+                pass
+
             return Response({'message': 'Followed successfully'})
         return Response({'message': 'Already following'})
 
@@ -35,15 +53,28 @@ class FollowViewSet(viewsets.ModelViewSet):
         """Unfollow a user"""
         following_id = request.data.get('user_id')
 
-        Follow.objects.filter(
+        deleted_count, _ = Follow.objects.filter(
             follower=request.user,
             following_id=following_id
         ).delete()
+
+        if deleted_count > 0:
+            # Update follower counts
+            request.user.profile.following_count = max(0, request.user.profile.following_count - 1)
+            request.user.profile.save()
+
+            try:
+                following_user = CustomUser.objects.get(id=following_id)
+                following_user.profile.followers_count = max(0, following_user.profile.followers_count - 1)
+                following_user.profile.save()
+            except CustomUser.DoesNotExist:
+                pass
 
         return Response({'message': 'Unfollowed successfully'})
 
 class LikeViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
+    serializer_class = LikeSerializer  # Add serializer for drf-spectacular
 
     def create(self, request):
         """Like a post"""

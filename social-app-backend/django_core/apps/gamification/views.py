@@ -8,6 +8,7 @@ from .serializers import (UserPointsSerializer, UserLevelSerializer,
 
 class GamificationViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
+    serializer_class = UserPointsSerializer  # Add serializer for drf-spectacular
 
     @action(detail=False, methods=['get'])
     def my_stats(self, request):

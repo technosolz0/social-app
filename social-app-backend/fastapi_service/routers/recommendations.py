@@ -1,6 +1,12 @@
 from fastapi import APIRouter, Depends
-from ..services.recommendation_engine import RecommendationEngine
-from ..dependencies import verify_token
+import sys
+import os
+
+# Add the parent directory to Python path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from services.recommendation_engine import RecommendationEngine
+from dependencies import verify_token
 
 router = APIRouter()
 

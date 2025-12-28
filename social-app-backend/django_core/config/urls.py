@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
 from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
@@ -20,7 +21,25 @@ router.register(r'comments', CommentViewSet, basename='comment')
 router.register(r'gamification', GamificationViewSet, basename='gamification')
 router.register(r'activities', ActivityViewSet, basename='activity')
 
+def api_root(request):
+    """Root API endpoint"""
+    return JsonResponse({
+        'message': 'Social App API',
+        'version': '1.0.0',
+        'documentation': request.build_absolute_uri('/api/docs/'),
+        'endpoints': {
+            'users': '/api/v1/users/',
+            'posts': '/api/v1/posts/',
+            'chat': '/api/v1/chat/',
+            'gamification': '/api/v1/gamification/',
+            'activities': '/api/v1/activities/',
+        }
+    })
+
 urlpatterns = [
+    # Root API endpoint
+    path('', api_root, name='api-root'),
+
     # Admin
     path('admin/', admin.site.urls),
 
@@ -28,8 +47,14 @@ urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 
+    # DRF browsable API authentication
+    path('api-auth/', include('rest_framework.urls')),
+
     # API v1
     path('api/v1/', include(router.urls)),
+
+    # Chat endpoints
+    path('api/v1/chat/', include('apps.chat.urls')),
 
     # Custom endpoints
     path('api/v1/likes/', LikeViewSet.as_view({'post': 'create', 'delete': 'destroy'})),

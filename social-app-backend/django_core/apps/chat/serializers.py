@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from .models import Conversation, Message
 from apps.users.serializers import UserSerializer
 
@@ -21,12 +22,14 @@ class ConversationSerializer(serializers.ModelSerializer):
         fields = ['id', 'conversation_type', 'name', 'avatar', 'participants',
                   'last_message', 'unread_count', 'created_at', 'updated_at']
 
+    @extend_schema_field(MessageSerializer)
     def get_last_message(self, obj):
         last_msg = obj.messages.last()
         if last_msg:
             return MessageSerializer(last_msg).data
         return None
 
+    @extend_schema_field(serializers.IntegerField)
     def get_unread_count(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
