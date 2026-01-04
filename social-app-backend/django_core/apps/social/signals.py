@@ -2,8 +2,8 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.db import models
 from .models import Like, Comment, Follow
-from django_core.apps.content.models import Post
-from django_core.apps.gamification.tasks import award_points
+from apps.content.models import Post
+from apps.gamification.tasks import award_points
 
 @receiver(post_save, sender=Like)
 def handle_like_created(sender, instance, created, **kwargs):
@@ -46,7 +46,7 @@ def handle_comment_created(sender, instance, created, **kwargs):
 def handle_follow_created(sender, instance, created, **kwargs):
     """Update follower/following counts"""
     if created:
-        from django_core.apps.users.models import UserProfile
+        from apps.users.models import UserProfile
         # Update follower count
         UserProfile.objects.filter(user=instance.following).update(
             followers_count=models.F('followers_count') + 1
@@ -59,7 +59,7 @@ def handle_follow_created(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=Follow)
 def handle_follow_deleted(sender, instance, **kwargs):
     """Decrement counts when unfollow"""
-    from django_core.apps.users.models import UserProfile
+    from apps.users.models import UserProfile
     UserProfile.objects.filter(user=instance.following).update(
         followers_count=models.F('followers_count') - 1
     )

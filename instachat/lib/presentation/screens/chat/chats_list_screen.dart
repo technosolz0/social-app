@@ -1,0 +1,300 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:timeago/timeago.dart' as timeago;
+import '../../../core/constants/theme_constants.dart';
+import '../../../data/models/conversation_model.dart';
+import '../../providers/conversations_provider.dart';
+import '../../providers/auth_provider.dart';
+
+class ChatsListScreen extends ConsumerStatefulWidget {
+  const ChatsListScreen({super.key});
+
+  @override
+  ConsumerState<ChatsListScreen> createState() => _ChatsListScreenState();
+}
+
+class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
+
+  @override
+  Widget build(BuildContext context) {
+    final conversationsAsync = ref.watch(conversationsProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Messages'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              // TODO: Create new message
+            },
+          ),
+        ],
+      ),
+      body: conversationsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text('Error: $error')),
+        data: (conversations) {
+          if (conversations.isEmpty) {
+            return _buildEmptyState();
+          }
+          return _buildConversationsList(conversations);
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // TODO: Start new conversation
+        },
+        child: const Icon(Icons.message),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            size: 80,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: AppSizes.paddingLarge),
+          Text(
+            'No messages yet',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: AppSizes.paddingMedium),
+          Text(
+            'Start a conversation with someone',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[500],
+            ),
+          ),
+          const SizedBox(height: AppSizes.paddingLarge),
+          ElevatedButton.icon(
+            onPressed: () {
+              // TODO: Start new conversation
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Start Chat'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConversationsList(List<ConversationModel> conversations) {
+    return ListView.builder(
+      itemCount: conversations.length,
+      itemBuilder: (context, index) {
+        final conversation = conversations[index];
+        return _buildConversationItem(conversation);
+      },
+    );
+  }
+
+  Widget _buildConversationItem(ConversationModel conversation) {
+    final currentUser = ref.read(authNotifierProvider).user;
+    final otherParticipants = conversation.participants.where((p) => p.id != currentUser?.id).toList();
+
+    // For direct messages, show the other participant
+    // For group chats, show group name
+    String displayName;
+    String? avatar;
+    bool isOnline = false;
+
+    if (conversation.conversationType == 'group') {
+      displayName = conversation.name ?? 'Group Chat';
+      avatar = null; // Group avatar
+    } else {
+      final participant = otherParticipants.isNotEmpty ? otherParticipants[0] : conversation.participants[0];
+      displayName = participant.username;
+      avatar = participant.avatar;
+      // TODO: Add online status when available
+      isOnline = false;
+    }
+
+    return ListTile(
+      leading: Stack(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: Colors.grey[300],
+            backgroundImage: avatar != null ? NetworkImage(avatar) : null,
+            child: avatar == null
+                ? Text(
+                    displayName[0].toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  )
+                : null,
+          ),
+          if (conversation.conversationType == 'direct' && isOnline)
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+              ),
+            ),
+        ],
+      ),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              displayName,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 16,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (conversation.lastMessage != null)
+            Text(
+              timeago.format(DateTime.parse(conversation.lastMessage!['created_at'] ?? '')),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+              ),
+            ),
+        ],
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                conversation.lastMessage?['content'] ?? 'No messages yet',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: (conversation.unreadCount ?? 0) > 0 ? Colors.black : Colors.grey[600],
+                  fontWeight: (conversation.unreadCount ?? 0) > 0 ? FontWeight.w500 : FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if ((conversation.unreadCount ?? 0) > 0) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: const BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  conversation.unreadCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      onTap: () {
+        // Navigate to chat room
+        context.go('/chat/${conversation.id}');
+      },
+      onLongPress: () {
+        _showConversationOptions(context, conversation);
+      },
+    );
+  }
+
+  void _showConversationOptions(BuildContext context, ConversationModel conversation) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.notifications_off),
+            title: const Text('Mute Conversation'),
+            onTap: () {
+              Navigator.pop(context);
+              // TODO: Mute conversation
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete, color: Colors.red),
+            title: const Text(
+              'Delete Conversation',
+              style: TextStyle(color: Colors.red),
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              _showDeleteConfirmation(context, conversation);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.block, color: Colors.red),
+            title: const Text(
+              'Block User',
+              style: TextStyle(color: Colors.red),
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              // TODO: Block user
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, ConversationModel conversation) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Conversation'),
+        content: const Text(
+          'Are you sure you want to delete this conversation? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Delete conversation
+              // Remove from provider
+              ref.read(conversationsProvider.notifier).loadConversations();
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

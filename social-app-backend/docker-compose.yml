@@ -6,9 +6,9 @@ services:
     image: postgres:15-alpine
     container_name: social_app_db
     environment:
-      POSTGRES_DB: social_app
-      POSTGRES_USER: social_user
-      POSTGRES_PASSWORD: social_password
+      POSTGRES_DB: social_user
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
@@ -16,7 +16,7 @@ services:
     networks:
       - social_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U social_user"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -43,7 +43,7 @@ services:
       context: ./django_core
       dockerfile: Dockerfile
     container_name: social_app_django
-    command: daphne config.asgi:application -b 0.0.0.0 -p 8000
+    command: gunicorn --pythonpath /app config.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - ./django_core:/app
       - static_volume:/app/staticfiles
@@ -66,7 +66,7 @@ services:
       context: ./fastapi_service
       dockerfile: Dockerfile
     container_name: social_app_fastapi
-    command: uvicorn main:app --host 0.0.0.0 --port 8001 --workers 4
+    command: uvicorn main:app --host 0.0.0.0 --port 8001
     volumes:
       - ./fastapi_service:/app
     ports:
@@ -82,12 +82,14 @@ services:
   # Celery Worker
   celery_worker:
     build:
-      context: ./django_core
+      context: ./celery_worker
       dockerfile: Dockerfile
     container_name: social_app_celery_worker
-    command: celery -A celery_worker.celery_app worker --loglevel=info --concurrency=4
+    command: celery -A celery_app worker --loglevel=info --concurrency=4
     volumes:
-      - ./django_core:/app
+      - ./django_core:/django_core
+    environment:
+      PYTHONPATH: /django_core:/app
     env_file:
       - .env
     depends_on:
@@ -100,18 +102,38 @@ services:
   # Celery Beat (Scheduler)
   celery_beat:
     build:
-      context: ./django_core
+      context: ./celery_worker
       dockerfile: Dockerfile
     container_name: social_app_celery_beat
-    command: celery -A celery_worker.celery_app beat --loglevel=info
+    command: celery -A celery_app beat --loglevel=info
     volumes:
-      - ./django_core:/app
+      - ./django_core:/django_core
+    environment:
+      PYTHONPATH: /django_core:/app
     env_file:
       - .env
     depends_on:
       - postgres
       - redis
       - django
+    networks:
+      - social_network
+
+  # WebSocket Service
+  websocket:
+    build:
+      context: ./websocket_service
+      dockerfile: Dockerfile
+    container_name: social_app_websocket
+    command: python server.py
+    volumes:
+      - ./websocket_service:/app
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    depends_on:
+      - redis
     networks:
       - social_network
 

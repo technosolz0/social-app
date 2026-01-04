@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from .models import CustomUser, UserProfile
 from .serializers import (UserSerializer, UserDetailSerializer,
@@ -12,6 +13,7 @@ from .serializers import (UserSerializer, UserDetailSerializer,
 class UserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
+    authentication_classes = [JWTAuthentication]
 
     def get_permissions(self):
         if self.action in ['create', 'login']:

@@ -48,7 +48,7 @@ class PostViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def feed(self, request):
         """Get personalized feed (following users)"""
-        from django_core.apps.social.models import Follow
+        from apps.social.models import Follow
 
         following_users = Follow.objects.filter(
             follower=request.user
@@ -85,7 +85,7 @@ class StoryViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         from django.utils import timezone
-        from django_core.apps.social.models import Follow
+        from apps.social.models import Follow
 
         # Get stories from following users that haven't expired
         following_users = Follow.objects.filter(

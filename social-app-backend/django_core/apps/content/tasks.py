@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 @shared_task
 def process_video_upload(post_id, video_url):
     """Process video upload - generate thumbnail, transcode, etc."""
-    from django_core.apps.content.models import Post
+    from apps.content.models import Post
 
     try:
         post = Post.objects.get(id=post_id)
@@ -26,7 +26,7 @@ def process_video_upload(post_id, video_url):
 @shared_task
 def expire_old_stories():
     """Delete expired stories"""
-    from django_core.apps.content.models import Story
+    from apps.content.models import Story
 
     now = timezone.now()
     expired_count = Story.objects.filter(expires_at__lt=now).delete()[0]
@@ -36,7 +36,7 @@ def expire_old_stories():
 @shared_task
 def update_trending():
     """Update trending hashtags and content"""
-    from django_core.apps.content.models import Post
+    from apps.content.models import Post
     from django.core.cache import cache
     from datetime import timedelta
 
@@ -55,7 +55,7 @@ def update_trending():
 @shared_task
 def generate_ai_caption(post_id):
     """Generate AI caption for post"""
-    from django_core.apps.content.models import Post
+    from apps.content.models import Post
 
     try:
         post = Post.objects.get(id=post_id)

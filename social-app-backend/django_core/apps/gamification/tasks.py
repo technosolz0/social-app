@@ -26,8 +26,8 @@ LEVEL_THRESHOLDS = {
 @shared_task
 def award_points(user_id, action_type, points=None):
     """Award points to user for actions"""
-    from django_core.apps.users.models import CustomUser
-    from django_core.apps.gamification.models import UserPoints, PointsTransaction, UserLevel
+    from apps.users.models import CustomUser
+    from apps.gamification.models import UserPoints, PointsTransaction, UserLevel
 
     try:
         user = CustomUser.objects.get(id=user_id)
@@ -59,8 +59,8 @@ def award_points(user_id, action_type, points=None):
 @shared_task
 def check_level_up(user_id):
     """Check if user should level up based on points"""
-    from django_core.apps.users.models import CustomUser
-    from django_core.apps.gamification.models import UserPoints, UserLevel
+    from apps.users.models import CustomUser
+    from apps.gamification.models import UserPoints, UserLevel
 
     try:
         user = CustomUser.objects.get(id=user_id)
@@ -103,8 +103,8 @@ def check_level_up(user_id):
 @shared_task
 def process_daily_logins():
     """Process daily login streaks and award points"""
-    from django_core.apps.gamification.models import UserPoints
-    from django_core.apps.users.models import CustomUser
+    from apps.gamification.models import UserPoints
+    from apps.users.models import CustomUser
 
     today = date.today()
     yesterday = today - timedelta(days=1)
@@ -140,7 +140,7 @@ def process_daily_logins():
 @shared_task
 def check_daily_quests():
     """Check and update daily quest progress"""
-    from django_core.apps.gamification.models import DailyQuest, UserQuest
+    from apps.gamification.models import DailyQuest, UserQuest
     from django.utils import timezone
 
     today = timezone.now().date()
@@ -174,7 +174,7 @@ def check_daily_quests():
 @shared_task
 def send_level_up_notification(user_id, new_level):
     """Send notification when user levels up"""
-    from django_core.apps.notifications.services import NotificationService
+    from apps.notifications.services import NotificationService
 
     NotificationService.send_notification(
         user_id=user_id,

@@ -1,0 +1,130 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'presentation/screens/auth/splash_screen.dart';
+import 'presentation/screens/auth/login_screen.dart';
+import 'presentation/screens/auth/register_screen.dart';
+import 'presentation/screens/main/main_screen.dart';
+import 'presentation/screens/main/activity_screen.dart';
+import 'presentation/screens/post/create_post_screen.dart';
+import 'presentation/screens/post/post_detail_screen.dart';
+import 'presentation/screens/profile/edit_profile_screen.dart';
+import 'presentation/screens/settings/settings_screen.dart';
+import 'presentation/screens/settings/account_settings_screen.dart';
+import 'presentation/screens/settings/privacy_settings_screen.dart';
+import 'presentation/screens/settings/notification_settings_screen.dart';
+import 'presentation/screens/settings/help_screen.dart';
+import 'presentation/screens/camera/camera_screen.dart';
+import 'presentation/screens/chat/chats_list_screen.dart';
+import 'presentation/screens/chat/chat_room_screen.dart';
+
+import 'presentation/providers/auth_provider.dart';
+import 'core/constants/theme_constants.dart';
+
+class SocialApp extends ConsumerWidget {
+  const SocialApp({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = _createRouter(ref);
+
+    return MaterialApp.router(
+      title: 'Social App',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.light,
+      routerConfig: router,
+    );
+  }
+
+  GoRouter _createRouter(WidgetRef ref) {
+    return GoRouter(
+      initialLocation: '/',
+      redirect: (context, state) {
+        final authState = ref.read(authNotifierProvider);
+        final isAuthenticated = authState.isAuthenticated;
+        final isLoggingIn =
+            state.matchedLocation == '/login' ||
+            state.matchedLocation == '/register';
+
+        if (!isAuthenticated && !isLoggingIn) {
+          // return '/home';
+          return '/login';
+        }
+
+        if (isAuthenticated && isLoggingIn) {
+          return '/home';
+        }
+
+        return null;
+      },
+      routes: [
+        GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+        GoRoute(
+          path: '/login',
+          builder: (context, state) => const LoginScreen(),
+        ),
+        GoRoute(
+          path: '/register',
+          builder: (context, state) => const RegisterScreen(),
+        ),
+        GoRoute(path: '/home', builder: (context, state) => const MainScreen()),
+        GoRoute(
+          path: '/activity',
+          builder: (context, state) => const ActivityScreen(),
+        ),
+        GoRoute(
+          path: '/create-post',
+          builder: (context, state) => const CreatePostScreen(),
+        ),
+        GoRoute(
+          path: '/post/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return PostDetailScreen(postId: id);
+          },
+        ),
+        GoRoute(
+          path: '/edit-profile',
+          builder: (context, state) => const EditProfileScreen(),
+        ),
+        GoRoute(
+          path: '/settings',
+          builder: (context, state) => const SettingsScreen(),
+        ),
+        GoRoute(
+          path: '/account-settings',
+          builder: (context, state) => const AccountSettingsScreen(),
+        ),
+        GoRoute(
+          path: '/privacy-settings',
+          builder: (context, state) => const PrivacySettingsScreen(),
+        ),
+        GoRoute(
+          path: '/notification-settings',
+          builder: (context, state) => const NotificationSettingsScreen(),
+        ),
+        GoRoute(
+          path: '/help',
+          builder: (context, state) => const HelpScreen(),
+        ),
+        GoRoute(
+          path: '/camera',
+          builder: (context, state) => const CameraScreen(),
+        ),
+        GoRoute(
+          path: '/chats',
+          builder: (context, state) => const ChatsListScreen(),
+        ),
+        GoRoute(
+          path: '/chat/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return ChatRoomScreen(conversationId: id);
+          },
+        ),
+      ],
+    );
+  }
+}

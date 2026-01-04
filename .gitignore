@@ -14,7 +14,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -267,7 +266,8 @@ config/local_settings.py
 config/settings/local.py
 
 # Media files (if any are generated)
-media/
+/social-app-backend/django_core/media/
+/social-app-backend/media/
 staticfiles/
 
 # Coverage reports
@@ -276,7 +276,8 @@ htmlcov/
 
 # Django
 static/
-media/
+/social-app-backend/django_core/media/
+/social-app-backend/media/
 
 # FastAPI
 __pycache__/
@@ -378,17 +379,11 @@ instachat/android/app/release/
 # iOS
 instachat/ios/Flutter/.last_build_id
 
-# Generated files
-instachat/lib/data/models/*.g.dart
-instachat/lib/presentation/providers/*.g.dart
 
 # Test coverage
 coverage/
 *.lcov
 
-# Firebase (if used later)
-google-services.json
-GoogleService-Info.plist
 
 # Sentry
 .sentryclirc

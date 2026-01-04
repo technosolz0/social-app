@@ -2,8 +2,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import models
 from .models import Post
-from django_core.apps.users.models import UserProfile
-from django_core.apps.gamification.tasks import award_points
+from apps.users.models import UserProfile
+from apps.gamification.tasks import award_points
 
 @receiver(post_save, sender=Post)
 def handle_post_created(sender, instance, created, **kwargs):

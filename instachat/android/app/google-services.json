@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "41446007568",
+    "project_id": "instachat-6cea0",
+    "storage_bucket": "instachat-6cea0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:41446007568:android:62ff587cb6d8bab89fbb95",
+        "android_client_info": {
+          "package_name": "com.technosolz.instachat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfFLUysoo1E-5yU2FYfGyV347TdymUM2Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
