@@ -53,8 +53,10 @@ class AuthNotifier extends _$AuthNotifier {
   // Initial state when app starts
   @override
   AuthState build() {
-    // Return initial state - auth status will be checked when needed
-    return const AuthState();
+    // Check auth status on startup
+    // We use microtask to perform side effect after build
+    Future.microtask(() => checkAuthStatus());
+    return const AuthState(isLoading: true);
   }
 
   // Check auth status - call this explicitly when needed
@@ -143,16 +145,17 @@ class AuthNotifier extends _$AuthNotifier {
     try {
       final hasValidToken = await _authRepository.hasValidToken();
       if (hasValidToken) {
-        // Get current user data
         final user = await _authRepository.getCurrentUser();
         state = state.copyWith(
           user: user,
           isAuthenticated: true,
+          isLoading: false,
         );
+      } else {
+        state = state.copyWith(isLoading: false, isAuthenticated: false);
       }
     } catch (e) {
-      // Token is invalid, stay in unauthenticated state
-      state = const AuthState();
+      state = state.copyWith(isLoading: false, isAuthenticated: false);
     }
   }
 }

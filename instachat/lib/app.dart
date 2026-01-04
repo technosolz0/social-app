@@ -44,15 +44,20 @@ class SocialApp extends ConsumerWidget {
       redirect: (context, state) {
         final authState = ref.read(authNotifierProvider);
         final isAuthenticated = authState.isAuthenticated;
+        final isSplashScreen = state.matchedLocation == '/';
         final isLoggingIn =
             state.matchedLocation == '/login' ||
             state.matchedLocation == '/register';
 
+        // 1. If currently checking auth, stay on Splash
+        if (authState.isLoading || isSplashScreen) return null;
+
+        // 2. If not authenticated and not on login/register, go to login
         if (!isAuthenticated && !isLoggingIn) {
-          // return '/home';
           return '/login';
         }
 
+        // 3. If authenticated and on login/register, go to home
         if (isAuthenticated && isLoggingIn) {
           return '/home';
         }

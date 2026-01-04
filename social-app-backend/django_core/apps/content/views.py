@@ -78,6 +78,29 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer = PostSerializer(posts, many=True, context={'request': request})
         return Response(serializer.data)
 
+    @action(detail=True, methods=['post', 'delete'])
+    def like(self, request, pk=None):
+        """Like/Unlike a post"""
+        from apps.social.models import Like
+        if request.method == 'DELETE':
+            Like.objects.filter(
+                user=request.user,
+                post_id=pk
+            ).delete()
+            return Response({
+                'liked': False,
+                'message': 'Unliked successfully'
+            }, status=status.HTTP_200_OK)
+        else:
+            like, created = Like.objects.get_or_create(
+                user=request.user,
+                post_id=pk
+            )
+            return Response({
+                'liked': True,
+                'message': 'Liked successfully'
+            }, status=status.HTTP_200_OK)
+
 class StoryViewSet(viewsets.ModelViewSet):
     queryset = Story.objects.select_related('user__profile').all()
     serializer_class = StorySerializer

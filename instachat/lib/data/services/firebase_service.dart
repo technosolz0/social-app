@@ -14,10 +14,16 @@ class FirebaseService {
   Future<void> init() async {
     try {
       // Initialize Firebase Core
-      await Firebase.initializeApp();
-
-      if (kDebugMode) {
-        print('🔥 Firebase initialized successfully');
+      try {
+        await Firebase.initializeApp();
+        if (kDebugMode) {
+          print('🔥 Firebase initialized successfully');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️ Firebase initialization failed (check google-services.json): $e');
+        }
+        return; // Stop initialization if Firebase Core fails
       }
 
       // Initialize Firebase Messaging after Firebase Core
