@@ -96,7 +96,10 @@ class ActivityTracker extends _$ActivityTracker {
     );
 
     // Add to local state immediately for UI responsiveness
-    state = [...state, activity];
+    // Using Future.microtask to avoid modifying provider during build phase
+    Future.microtask(() {
+      state = [...state, activity];
+    });
 
     // Save to local storage
     _saveActivityToStorage(activity);
