@@ -21,6 +21,10 @@ router.register(r'comments', CommentViewSet, basename='comment')
 router.register(r'gamification', GamificationViewSet, basename='gamification')
 router.register(r'activities', ActivityViewSet, basename='activity')
 
+# Add nested routes for comments under posts
+post_router = DefaultRouter()
+post_router.register(r'comments', CommentViewSet, basename='post-comments')
+
 def api_root(request):
     """Root API endpoint"""
     return JsonResponse({
@@ -52,6 +56,18 @@ urlpatterns = [
 
     # API v1
     path('api/v1/', include(router.urls)),
+
+    # Nested routes for posts
+    path('api/v1/posts/<uuid:post_id>/', include([
+        path('comments/', CommentViewSet.as_view({
+            'get': 'list',
+            'post': 'create'
+        }), name='post-comments'),
+        path('likes/', LikeViewSet.as_view({
+            'post': 'create',
+            'delete': 'destroy'
+        }), name='post-likes'),
+    ])),
 
     # Chat endpoints
     path('api/v1/chat/', include('apps.chat.urls')),

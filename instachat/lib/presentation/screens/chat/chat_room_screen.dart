@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:instachat/data/models/message_model.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../data/models/user_model.dart';
 import '../../providers/auth_provider.dart';
@@ -12,6 +12,7 @@ import '../../providers/chat_provider.dart';
 import '../../providers/post_provider.dart';
 import '../../widgets/chat/chat_input.dart' as chat_widgets;
 import '../../widgets/chat/message_bubble.dart' as chat_widgets;
+import 'package:image_picker/image_picker.dart';
 
 // ============================================
 // lib/presentation/screens/chat/chat_room_screen.dart
@@ -80,7 +81,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () {
-              _showChatSettings();
+              context.push('/chat-settings/${widget.conversationId}');
             },
           ),
         ],
@@ -308,11 +309,11 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           ),
           if (message.sender.id == ref.read(authNotifierProvider).user!.id)
             ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Text('Unsend'),
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Unsend', style: TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
-                // Unsend message
+                ref.read(chatProvider(widget.conversationId).notifier).unsendMessage(message.id);
               },
             ),
         ],
@@ -321,38 +322,41 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   }
 
   Future<void> _openCamera() async {
-    // final result = await Navigator.push(
-    //   context,
-    //   MaterialPageRoute(builder: (context) => const CameraScreen()),
-    // );
-
-    // if (result != null && result is File) {
-    //   // Send photo
-    //   ref.read(chatProvider(widget.conversationId).notifier).sendMessage(
-    //     content: '',
-    //     messageType: 'image',
-    //     mediaUrl: await _uploadFile(result),
-    //   );
-    // }
+    final storageService = ref.read(storageServiceProvider);
+    final file = await storageService.pickImage(source: ImageSource.camera);
+    
+    if (file != null) {
+      final url = await storageService.uploadImage(file);
+      if (url != null) {
+        ref.read(chatProvider(widget.conversationId).notifier).sendMessage(
+          content: '',
+          messageType: 'image',
+          mediaUrl: url,
+        );
+      }
+    }
   }
 
   Future<void> _pickImage() async {
-    // final picker = ImagePicker();
-    // final image = await picker.pickImage(source: ImageSource.gallery);
+    final storageService = ref.read(storageServiceProvider);
+    final file = await storageService.pickImage(source: ImageSource.gallery);
 
-    // if (image != null) {
-    //   final url = await _uploadFile(File(image.path));
-    //   ref.read(chatProvider(widget.conversationId).notifier).sendMessage(
-    //     content: '',
-    //     messageType: 'image',
-    //     mediaUrl: url,
-    //   );
-    // }
+    if (file != null) {
+      final url = await storageService.uploadImage(file);
+      if (url != null) {
+        ref.read(chatProvider(widget.conversationId).notifier).sendMessage(
+          content: '',
+          messageType: 'image',
+          mediaUrl: url,
+        );
+      }
+    }
   }
 
   Future<void> _recordVoice() async {
-    // Implement voice recording
-    // Use record package
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Voice recording coming soon!')),
+    );
   }
 
   Future<String> _uploadFile(File file) async {
@@ -366,14 +370,5 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-}
-
-// StorageService provider is now defined in post_provider.dart
-
-class StorageService {
-  Future<String> uploadFile(File file) async {
-    // Mock upload
-    return 'https://example.com/uploaded_file.jpg';
   }
 }

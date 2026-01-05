@@ -4,13 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/message_model.dart';
-import '../../data/models/user_model.dart';
-import '../../data/models/conversation_model.dart';
 import '../../data/services/api_service.dart';
 import '../../data/services/websocket_service.dart';
 import '../../data/services/local_storage_service.dart';
 import 'auth_provider.dart';
-import 'activity_tracker_provider.dart';
 
 class ChatNotifier extends FamilyAsyncNotifier<List<MessageModel>, String> {
   late String _conversationId;
@@ -98,12 +95,28 @@ class ChatNotifier extends FamilyAsyncNotifier<List<MessageModel>, String> {
     }
   }
 
-  // Mark messages as read
+  Future<void> unsendMessage(String messageId) async {
+    try {
+      await _api.customRequest(
+        method: 'DELETE',
+        path: '/chat/messages/$messageId/',
+      );
+      
+      // Update state by removing message
+      final currentMessages = state.value ?? [];
+      state = AsyncValue.data(
+        currentMessages.where((m) => m.id != messageId).toList(),
+      );
+    } catch (error) {
+      print('Error unsending message: $error');
+    }
+  }
+
   Future<void> markAsRead(String messageId) async {
     try {
       await _api.customRequest(
         method: 'POST',
-        path: '/api/v1/chat/messages/$messageId/mark_read',
+        path: '/chat/messages/$messageId/mark_read/',
       );
       // Update local message state as read
       final currentMessages = state.value ?? [];

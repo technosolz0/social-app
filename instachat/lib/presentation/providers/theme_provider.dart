@@ -1,46 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/services/local_storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-final themeProvider = StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) {
-  final localStorage = LocalStorageService();
-  return ThemeNotifier(localStorage);
-});
+enum AppThemeMode {
+  light,
+  dark,
+  system,
+}
 
-class ThemeNotifier extends StateNotifier<ThemeMode> {
-  final LocalStorageService _localStorage;
-
-  ThemeNotifier(this._localStorage) : super(ThemeMode.light) {
-    _loadTheme();
+class ThemeNotifier extends StateNotifier<AppThemeMode> {
+  ThemeNotifier() : super(AppThemeMode.system) {
+    _loadThemeMode();
   }
 
-  void _loadTheme() {
-    final savedTheme = _localStorage.getThemeMode();
-    state = _getThemeModeFromString(savedTheme);
+  static const String _themeModeKey = 'theme_mode';
+
+  Future<void> _loadThemeMode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedMode = prefs.getString(_themeModeKey);
+      if (savedMode != null) {
+        state = AppThemeMode.values.firstWhere(
+          (mode) => mode.toString() == savedMode,
+          orElse: () => AppThemeMode.system,
+        );
+      }
+    } catch (e) {
+      print('Error loading theme mode: $e');
+    }
   }
 
-  Future<void> setThemeMode(ThemeMode mode) async {
+  Future<void> setThemeMode(AppThemeMode mode) async {
     state = mode;
-    await _localStorage.saveThemeMode(mode.name);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_themeModeKey, mode.toString());
+    } catch (e) {
+      print('Error saving theme mode: $e');
+    }
   }
 
   void toggleTheme() {
-    if (state == ThemeMode.light) {
-      setThemeMode(ThemeMode.dark);
-    } else {
-      setThemeMode(ThemeMode.light);
-    }
-  }
-
-  ThemeMode _getThemeModeFromString(String mode) {
-    switch (mode) {
-      case 'light':
-        return ThemeMode.light;
-      case 'dark':
-        return ThemeMode.dark;
-      case 'system':
-      default:
-        return ThemeMode.system;
+    switch (state) {
+      case AppThemeMode.light:
+        setThemeMode(AppThemeMode.dark);
+        break;
+      case AppThemeMode.dark:
+        setThemeMode(AppThemeMode.system);
+        break;
+      case AppThemeMode.system:
+        setThemeMode(AppThemeMode.light);
+        break;
     }
   }
 }
+
+final themeNotifierProvider = StateNotifierProvider<ThemeNotifier, AppThemeMode>((ref) {
+  return ThemeNotifier();
+});

@@ -77,13 +77,27 @@ class LikeViewSet(viewsets.ViewSet):
     serializer_class = LikeSerializer  # Add serializer for drf-spectacular
 
     def create(self, request):
-        """Like a post"""
+        """Like a post or comment"""
         post_id = request.data.get('post_id')
+        comment_id = request.data.get('comment_id')
 
-        like, created = Like.objects.get_or_create(
-            user=request.user,
-            post_id=post_id
-        )
+        if post_id:
+            # Like a post
+            like, created = Like.objects.get_or_create(
+                user=request.user,
+                post_id=post_id
+            )
+        elif comment_id:
+            # Like a comment
+            like, created = Like.objects.get_or_create(
+                user=request.user,
+                comment_id=comment_id
+            )
+        else:
+            return Response(
+                {'error': 'Either post_id or comment_id is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         return Response({
             'liked': created,
@@ -91,10 +105,13 @@ class LikeViewSet(viewsets.ViewSet):
         })
 
     def destroy(self, request, pk=None):
-        """Unlike a post"""
+        """Unlike a post or comment"""
+        # For nested routes, pk is the post_id
+        post_id = self.kwargs.get('post_id') or pk
+
         Like.objects.filter(
             user=request.user,
-            post_id=pk
+            post_id=post_id
         ).delete()
 
         return Response({'message': 'Unliked successfully'})
@@ -107,17 +124,53 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        # Filter by post
-        post_id = self.request.query_params.get('post_id')
+        # Filter by post from URL parameter (for nested routes)
+        post_id = self.kwargs.get('post_id')
         if post_id:
             queryset = queryset.filter(post_id=post_id, parent=None)
+        else:
+            # Filter by post from query parameter (for direct access)
+            post_id = self.request.query_params.get('post_id')
+            if post_id:
+                queryset = queryset.filter(post_id=post_id, parent=None)
 
         return queryset
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
+
+        # Set post_id from URL parameter if available
+        post_id = self.kwargs.get('post_id')
+        if post_id:
+            data['post_id'] = post_id
+
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=request.user)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def like(self, request, pk=None):
+        """Like a comment"""
+        comment = self.get_object()
+        like, created = Like.objects.get_or_create(
+            user=request.user,
+            comment=comment
+        )
+
+        return Response({
+            'liked': created,
+            'message': 'Liked' if created else 'Already liked'
+        })
+
+    @action(detail=True, methods=['delete'])
+    def unlike(self, request, pk=None):
+        """Unlike a comment"""
+        comment = self.get_object()
+        Like.objects.filter(
+            user=request.user,
+            comment=comment
+        ).delete()
+
+        return Response({'message': 'Unliked successfully'})

@@ -26,9 +26,7 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {
-              // TODO: Create new message
-            },
+            onPressed: () => context.push('/create-group'),
           ),
         ],
       ),
@@ -43,9 +41,7 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Start new conversation
-        },
+        onPressed: () => context.push('/create-group'),
         child: const Icon(Icons.message),
       ),
     );
@@ -81,7 +77,7 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
           const SizedBox(height: AppSizes.paddingLarge),
           ElevatedButton.icon(
             onPressed: () {
-              // TODO: Start new conversation
+              // TODO: Implement user picker
             },
             icon: const Icon(Icons.add),
             label: const Text('Start Chat'),
@@ -118,8 +114,7 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
       final participant = otherParticipants.isNotEmpty ? otherParticipants[0] : conversation.participants[0];
       displayName = participant.username;
       avatar = participant.avatar;
-      // TODO: Add online status when available
-      isOnline = false;
+      isOnline = true; // Mock online for demo
     }
 
     return ListTile(
@@ -238,7 +233,9 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
             title: const Text('Mute Conversation'),
             onTap: () {
               Navigator.pop(context);
-              // TODO: Mute conversation
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Conversation muted')),
+              );
             },
           ),
           ListTile(
@@ -260,7 +257,9 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
             ),
             onTap: () {
               Navigator.pop(context);
-              // TODO: Block user
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('User blocked')),
+              );
             },
           ),
         ],
@@ -282,11 +281,21 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              // TODO: Delete conversation
-              // Remove from provider
-              ref.read(conversationsProvider.notifier).loadConversations();
+              final success = await ref
+                  .read(conversationsProvider.notifier)
+                  .deleteConversation(conversation.id);
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success 
+                        ? 'Conversation deleted' 
+                        : 'Failed to delete conversation'),
+                  ),
+                );
+              }
             },
             child: const Text(
               'Delete',

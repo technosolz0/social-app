@@ -14,6 +14,9 @@ class AuthRepository {
     _apiService = apiService ?? ApiService(),
     _localStorage = localStorage ?? LocalStorageService();
 
+  // Public getter for local storage (needed for auth provider)
+  LocalStorageService get localStorage => _localStorage;
+
   // ===========================================================================
   // AUTHENTICATION METHODS
   // ===========================================================================
@@ -32,6 +35,9 @@ class AuthRepository {
         if (refreshToken != null) {
           await _localStorage.saveRefreshToken(refreshToken);
         }
+
+        // Save user credentials for automatic re-login
+        await _localStorage.saveUserCredentials(identifier, password);
 
         // Set token in API service
         _apiService.setAuthToken(accessToken);
@@ -86,7 +92,7 @@ class AuthRepository {
       try {
         await _apiService.customRequest(
           method: 'POST',
-          path: '/api/v1/auth/logout',
+          path: '/auth/logout/',
         );
       } catch (e) {
         // Ignore logout endpoint errors
@@ -145,7 +151,7 @@ class AuthRepository {
     try {
       final response = await _apiService.customRequest(
         method: 'PATCH',
-        path: '/api/v1/users/me/profile',
+        path: '/users/me/profile/',
         data: profileData,
       );
       return UserModel.fromJson(response.data);
@@ -188,8 +194,12 @@ class AuthRepository {
       try {
         final refreshTokenValue = await getRefreshToken();
         if (refreshTokenValue != null) {
-          await this.refreshToken(refreshTokenValue);
-          return true;
+          final refreshResponse = await this.refreshToken(refreshTokenValue);
+          final newToken = refreshResponse['access'] as String?;
+          if (newToken != null) {
+            _apiService.setAuthToken(newToken);
+            return true;
+          }
         }
       } catch (e) {
         // Refresh also failed

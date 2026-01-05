@@ -25,13 +25,13 @@ class GamificationNotifier
       // Get user points and level
       final pointsResponse = await apiService.customRequest(
         method: 'GET',
-        path: '/api/v1/gamification/points',
+        path: '/gamification/points/',
       );
 
       // Get user badges
       final badgesResponse = await apiService.customRequest(
         method: 'GET',
-        path: '/api/v1/gamification/badges',
+        path: '/gamification/badges/',
       );
 
       final data = GamificationModel(
@@ -80,7 +80,7 @@ class GamificationNotifier
       final apiService = ApiService();
       await apiService.customRequest(
         method: 'POST',
-        path: '/api/v1/gamification/points',
+        path: '/gamification/points/',
         data: {'activity_type': activityType, 'points': points},
       );
     } catch (e) {
@@ -108,7 +108,7 @@ class GamificationNotifier
       final apiService = ApiService();
       await apiService.customRequest(
         method: 'PATCH',
-        path: '/api/v1/gamification/streak',
+        path: '/gamification/streak/',
         data: {'streak': newStreak},
       );
     } catch (e) {
@@ -137,7 +137,7 @@ class GamificationNotifier
       final apiService = ApiService();
       await apiService.customRequest(
         method: 'POST',
-        path: '/api/v1/gamification/badges',
+        path: '/gamification/badges/',
         data: badge.toJson(),
       );
     } catch (e) {
@@ -152,7 +152,7 @@ class GamificationNotifier
       final apiService = ApiService();
       final response = await apiService.customRequest(
         method: 'GET',
-        path: '/api/v1/gamification/leaderboard',
+        path: '/gamification/leaderboard/',
       );
       return List<Map<String, dynamic>>.from(response.data['results'] ?? []);
     } catch (e) {
@@ -166,7 +166,7 @@ class GamificationNotifier
       final apiService = ApiService();
       final response = await apiService.customRequest(
         method: 'GET',
-        path: '/api/v1/gamification/quests',
+        path: '/gamification/quests/',
       );
       return List<Map<String, dynamic>>.from(response.data['results'] ?? []);
     } catch (e) {

@@ -143,7 +143,7 @@ class ActivityTracker extends _$ActivityTracker {
       for (final activity in unsyncedActivities) {
         await apiService.customRequest(
           method: 'POST',
-          path: '/api/v1/gamification/activities',
+          path: '/gamification/activities/',
           data: activity.toJson(),
         );
       }

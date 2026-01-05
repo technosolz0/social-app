@@ -19,15 +19,17 @@ class ApiService {
   String? _csrfToken;
 
   ApiService._internal() {
-    _dio = Dio(BaseOptions(
-      baseUrl: ApiConstants.apiBaseUrl,
-      connectTimeout: ApiConstants.connectTimeout,
-      receiveTimeout: ApiConstants.receiveTimeout,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: ApiConstants.apiBaseUrl,
+        connectTimeout: ApiConstants.connectTimeout,
+        receiveTimeout: ApiConstants.receiveTimeout,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ),
+    );
 
     // Add interceptors
     _dio.interceptors.addAll([
@@ -41,7 +43,7 @@ class ApiService {
   // ===========================================================================
   // INTERCEPTORS
   // ===========================================================================
-  
+
   Interceptor _csrfInterceptor() {
     return InterceptorsWrapper(
       onRequest: (options, handler) {
@@ -98,14 +100,18 @@ class ApiService {
       },
       onResponse: (response, handler) {
         if (kDebugMode) {
-          print('✅ API Response: ${response.statusCode} ${response.requestOptions.uri}');
+          print(
+            '✅ API Response: ${response.statusCode} ${response.requestOptions.uri}',
+          );
           print('📥 Data: ${response.data}');
         }
         return handler.next(response);
       },
       onError: (error, handler) {
         if (kDebugMode) {
-          print('❌ API Error: ${error.response?.statusCode} ${error.requestOptions.uri}');
+          print(
+            '❌ API Error: ${error.response?.statusCode} ${error.requestOptions.uri}',
+          );
           print('❌ Error: ${error.message}');
           if (error.response?.data != null) {
             print('❌ Response Data: ${error.response?.data}');
@@ -162,7 +168,7 @@ class ApiService {
     final response = await _dio.post(
       ApiConstants.login,
       data: {
-        'identifier': identifier,  // Can be username or email
+        'identifier': identifier, // Can be username or email
         'password': password,
       },
     );
@@ -175,10 +181,7 @@ class ApiService {
   }) async {
     final response = await _dio.post(
       ApiConstants.register,
-      data: {
-        'identifier': identifier,
-        'password': password,
-      },
+      data: {'identifier': identifier, 'password': password},
     );
     return response.data;
   }
@@ -222,7 +225,10 @@ class ApiService {
     await _dio.post(ApiConstants.unfollowUser(userId));
   }
 
-  Future<List<UserModel>> getUserFollowers(String userId, {int page = 1}) async {
+  Future<List<UserModel>> getUserFollowers(
+    String userId, {
+    int page = 1,
+  }) async {
     final response = await _dio.get(
       ApiConstants.userFollowers(userId),
       queryParameters: {'page': page},
@@ -231,7 +237,10 @@ class ApiService {
     return data.map((json) => UserModel.fromJson(json)).toList();
   }
 
-  Future<List<UserModel>> getUserFollowing(String userId, {int page = 1}) async {
+  Future<List<UserModel>> getUserFollowing(
+    String userId, {
+    int page = 1,
+  }) async {
     final response = await _dio.get(
       ApiConstants.userFollowing(userId),
       queryParameters: {'page': page},
@@ -255,7 +264,7 @@ class ApiService {
 
   Future<List<PostModel>> getUserPosts(String userId, {int page = 1}) async {
     final response = await _dio.get(
-      ApiConstants.userById(userId) + '/posts',
+      ApiConstants.userById(userId) + 'posts/',
       queryParameters: {'page': page},
     );
     final List<dynamic> data = response.data['results'] ?? response.data;
@@ -309,19 +318,24 @@ class ApiService {
     return response.data['results'] ?? response.data;
   }
 
-  Future<Map<String, dynamic>> addComment(String postId, String text, {String? parentId}) async {
+  Future<Map<String, dynamic>> addComment(
+    String postId,
+    String text, {
+    String? parentId,
+  }) async {
     final response = await _dio.post(
       ApiConstants.postComments(postId),
-      data: {
-        'text': text,
-        if (parentId != null) 'parent': parentId,
-      },
+      data: {'text': text, if (parentId != null) 'parent': parentId},
     );
     return response.data;
   }
 
   Future<void> likeComment(String commentId) async {
-    await _dio.post('/api/v1/comments/$commentId/like');
+    await _dio.post('${ApiConstants.apiBaseUrl}/comments/$commentId/like/');
+  }
+
+  Future<void> unlikeComment(String commentId) async {
+    await _dio.delete('${ApiConstants.apiBaseUrl}/comments/$commentId/like/');
   }
 
   // ===========================================================================
@@ -337,11 +351,16 @@ class ApiService {
   }
 
   Future<dynamic> getConversationById(String conversationId) async {
-    final response = await _dio.get(ApiConstants.conversationById(conversationId));
+    final response = await _dio.get(
+      ApiConstants.conversationById(conversationId),
+    );
     return response.data;
   }
 
-  Future<List<MessageModel>> getConversationMessages(String conversationId, {int page = 1}) async {
+  Future<List<MessageModel>> getConversationMessages(
+    String conversationId, {
+    int page = 1,
+  }) async {
     final response = await _dio.get(
       ApiConstants.conversationMessages(conversationId),
       queryParameters: {'page': page},
@@ -350,7 +369,8 @@ class ApiService {
     return data.map((json) => MessageModel.fromJson(json)).toList();
   }
 
-  Future<MessageModel> sendMessage(String conversationId, {
+  Future<MessageModel> sendMessage(
+    String conversationId, {
     required String messageType,
     String? content,
     String? mediaUrl,
@@ -370,20 +390,18 @@ class ApiService {
   Future<dynamic> createConversation(String otherUserId) async {
     final response = await _dio.post(
       '${ApiConstants.conversations}create_direct_message/',
-      data: {
-        'user_id': otherUserId,
-      },
+      data: {'user_id': otherUserId},
     );
     return response.data;
   }
 
-  Future<dynamic> createGroupConversation(List<String> participantIds, String name) async {
+  Future<dynamic> createGroupConversation(
+    List<String> participantIds,
+    String name,
+  ) async {
     final response = await _dio.post(
       '${ApiConstants.conversations}create_group/',
-      data: {
-        'participant_ids': participantIds,
-        'name': name,
-      },
+      data: {'participant_ids': participantIds, 'name': name},
     );
     return response.data;
   }
@@ -392,13 +410,13 @@ class ApiService {
   // ACTIVITY METHODS
   // ===========================================================================
 
-  Future<List<ActivityModel>> getActivities({int page = 1, String? type}) async {
+  Future<List<ActivityModel>> getActivities({
+    int page = 1,
+    String? type,
+  }) async {
     final response = await _dio.get(
       ApiConstants.activities,
-      queryParameters: {
-        'page': page,
-        if (type != null) 'activity_type': type,
-      },
+      queryParameters: {'page': page, if (type != null) 'activity_type': type},
     );
     final List<dynamic> data = response.data['results'] ?? response.data;
     return data.map((json) => ActivityModel.fromJson(json)).toList();
@@ -444,7 +462,10 @@ class ApiService {
   // SEARCH METHODS
   // ===========================================================================
 
-  Future<Map<String, dynamic>> search(String query, {String type = 'all'}) async {
+  Future<Map<String, dynamic>> search(
+    String query, {
+    String type = 'all',
+  }) async {
     final response = await _dio.get(
       ApiConstants.search,
       queryParameters: {'q': query, 'type': type},
@@ -458,7 +479,10 @@ class ApiService {
 
   Future<String> uploadFile(File file, {String type = 'image'}) async {
     final formData = FormData.fromMap({
-      'file': await MultipartFile.fromFile(file.path, filename: file.path.split('/').last),
+      'file': await MultipartFile.fromFile(
+        file.path,
+        filename: file.path.split('/').last,
+      ),
       'type': type,
     });
 
@@ -478,7 +502,7 @@ class ApiService {
     try {
       final storage = LocalStorageService();
       final refresh = await storage.getRefreshToken();
-      
+
       if (refresh == null) throw Exception('No refresh token found');
 
       final response = await _dio.post(
@@ -489,7 +513,7 @@ class ApiService {
       final String newToken = response.data['access'];
       _authToken = newToken;
       await storage.saveAuthToken(newToken);
-      
+
       if (kDebugMode) {
         print('🔄 Token refreshed successfully');
       }
@@ -506,7 +530,7 @@ class ApiService {
       method: requestOptions.method,
       headers: requestOptions.headers,
     );
-    
+
     // Update auth header with new token
     if (_authToken != null) {
       options.headers?['Authorization'] = 'Bearer $_authToken';
@@ -579,7 +603,9 @@ class ApiService {
     return response.data;
   }
 
-  Future<Map<String, dynamic>> getContentRecommendations({int limit = 20}) async {
+  Future<Map<String, dynamic>> getContentRecommendations({
+    int limit = 20,
+  }) async {
     final response = await _dio.get(
       ApiConstants.contentRecommendations,
       queryParameters: {'limit': limit},
@@ -587,7 +613,9 @@ class ApiService {
     return response.data;
   }
 
-  Future<Map<String, dynamic>> getHashtagRecommendations({int limit = 10}) async {
+  Future<Map<String, dynamic>> getHashtagRecommendations({
+    int limit = 10,
+  }) async {
     final response = await _dio.get(
       ApiConstants.hashtagRecommendations,
       queryParameters: {'limit': limit},

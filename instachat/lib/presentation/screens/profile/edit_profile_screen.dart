@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/theme_constants.dart';
-import '../../../data/services/storage_service.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/activity_tracker_provider.dart';
 import '../../providers/post_provider.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -80,19 +78,25 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         if (avatarUrl != null) 'avatar': avatarUrl,
       };
 
-      // Here you would call the auth repository to update profile
-      // For now, just show success
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully!')),
-      );
+      // Update profile data in backend
+      await ref.read(authNotifierProvider.notifier).updateProfile(profileData);
 
-      context.go('/home');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!')),
+        );
+        context.pop(); // Go back instead of home
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating profile: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating profile: $e')),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

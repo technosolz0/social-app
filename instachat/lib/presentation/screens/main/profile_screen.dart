@@ -1,60 +1,86 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:instachat/data/models/user_model.dart';
 import '../../../core/constants/theme_constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/post_provider.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authNotifierProvider);
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
 
-    if (authState.user == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  int _selectedTabIndex = 0;
 
-    final user = authState.user!;
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      setState(() => _selectedTabIndex = _tabController.index);
+    });
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Profile',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // TODO: Navigate to settings
-            },
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final authState = ref.watch(authNotifierProvider);
+
+        if (authState.user == null) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        final user = authState.user!;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Profile',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () => context.push('/settings'),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Profile Header
-            _buildProfileHeader(user),
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                // Profile Header
+                _buildProfileHeader(context, user),
 
-            // Stats
-            _buildStats(),
+                // Stats
+                _buildStats(context, user),
 
-            // Action Buttons
-            _buildActionButtons(),
+                // Action Buttons
+                _buildActionButtons(context),
 
-            // Posts Grid
-            _buildPostsGrid(),
-          ],
-        ),
-      ),
+                // Posts Grid
+                _buildPostsGrid(),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildProfileHeader(dynamic user) {
+  Widget _buildProfileHeader(BuildContext context, UserModel user) {
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingLarge),
       child: Column(
@@ -69,11 +95,7 @@ class ProfileScreen extends ConsumerWidget {
                     ? NetworkImage(user.avatar!)
                     : null,
                 child: user.avatar == null
-                    ? const Icon(
-                        Icons.person,
-                        size: 50,
-                        color: Colors.grey,
-                      )
+                    ? const Icon(Icons.person, size: 50, color: Colors.grey)
                     : null,
               ),
               Positioned(
@@ -101,10 +123,7 @@ class ProfileScreen extends ConsumerWidget {
           // Name and Username
           Text(
             user.username,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
 
           if (user.bio != null && user.bio!.isNotEmpty) ...[
@@ -112,10 +131,7 @@ class ProfileScreen extends ConsumerWidget {
             Text(
               user.bio!,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
           ],
 
@@ -123,7 +139,10 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: AppSizes.paddingSmall),
             GestureDetector(
               onTap: () {
-                // TODO: Open website
+                // In a real app we would use url_launcher
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Opening ${user.website}...')),
+                );
               },
               child: Text(
                 user.website!,
@@ -140,57 +159,66 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStats() {
+  Widget _buildStats(BuildContext context, UserModel user) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingLarge),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildStatItem('Posts', '42'),
-          _buildStatItem('Followers', '1.2K'),
-          _buildStatItem('Following', '380'),
+          _buildStatItem(context, 'Posts', user.postsCount.toString(), null),
+          _buildStatItem(context, 'Followers', user.followersCount.toString(), () {
+            context.push('/profile/${user.id}/followers');
+          }),
+          _buildStatItem(context, 'Following', user.followingCount.toString(), () {
+            context.push('/profile/${user.id}/following');
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+  Widget _buildStatItem(BuildContext context, String label, String value, VoidCallback? onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: onTap != null ? Colors.blue : Colors.black,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[600],
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: onTap != null ? Colors.blue : Colors.grey[600],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(AppSizes.paddingLarge),
       child: Row(
         children: [
           Expanded(
             child: ElevatedButton(
-              onPressed: () {
-                // TODO: Navigate to edit profile
-              },
+              onPressed: () => context.push('/edit-profile'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey[200],
                 foregroundColor: Colors.black,
+                elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+                  borderRadius: BorderRadius.circular(
+                    AppSizes.borderRadiusMedium,
+                  ),
                 ),
               ),
               child: const Text('Edit Profile'),
@@ -199,16 +227,67 @@ class ProfileScreen extends ConsumerWidget {
           const SizedBox(width: AppSizes.paddingMedium),
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
+              color: Colors.grey[200],
               borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
             ),
             child: IconButton(
-              onPressed: () {
-                // TODO: Show more options
-              },
-              icon: const Icon(Icons.more_vert),
+              onPressed: () => _showMoreOptions(context),
+              icon: const Icon(Icons.more_horiz),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showMoreOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/settings');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.history),
+            title: const Text('Your Activity'),
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/activity');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.qr_code_scanner),
+            title: const Text('QR Code'),
+            onTap: () => Navigator.pop(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Logout', style: TextStyle(color: Colors.red)),
+            onTap: () {
+              Navigator.pop(context);
+              // Call logout
+            },
+          ),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -223,9 +302,7 @@ class ProfileScreen extends ConsumerWidget {
         // Tab Bar
         Container(
           decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: Colors.grey[300]!),
-            ),
+            border: Border(top: BorderSide(color: Colors.grey[300]!)),
           ),
           child: Row(
             children: [
@@ -273,10 +350,7 @@ class ProfileScreen extends ConsumerWidget {
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     color: Colors.grey[300],
-                    child: const Icon(
-                      Icons.image,
-                      color: Colors.grey,
-                    ),
+                    child: const Icon(Icons.image, color: Colors.grey),
                   );
                 },
               ),

@@ -313,7 +313,7 @@ venv*/
 volumes/
 
 # Kubernetes
-*.yaml
+# *.yaml
 *.yml
 
 # Terraform

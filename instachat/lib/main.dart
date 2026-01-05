@@ -6,6 +6,7 @@ import 'app.dart';
 import 'data/services/cache_service.dart';
 import 'data/services/local_storage_service.dart';
 import 'data/services/firebase_service.dart';
+import 'data/services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,13 @@ void main() async {
 
   final firebaseService = FirebaseService();
   await firebaseService.init();
+
+  // Initialize API service with stored auth token
+  final apiService = ApiService();
+  final storedToken = await localStorageService.getAuthToken();
+  if (storedToken != null && storedToken.isNotEmpty) {
+    apiService.setAuthToken(storedToken);
+  }
 
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([

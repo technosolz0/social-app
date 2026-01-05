@@ -17,9 +17,15 @@ import 'presentation/screens/settings/help_screen.dart';
 import 'presentation/screens/camera/camera_screen.dart';
 import 'presentation/screens/chat/chats_list_screen.dart';
 import 'presentation/screens/chat/chat_room_screen.dart';
+import 'presentation/screens/chat/create_group_screen.dart';
+import 'presentation/screens/chat/chat_settings_screen.dart';
 
+import 'presentation/screens/profile/user_profile_screen.dart';
+import 'presentation/screens/profile/followers_screen.dart';
+import 'presentation/screens/profile/following_screen.dart';
 import 'presentation/providers/auth_provider.dart';
-import 'core/constants/theme_constants.dart';
+import 'presentation/providers/theme_provider.dart';
+import 'core/theme/app_theme.dart';
 
 class SocialApp extends ConsumerWidget {
   const SocialApp({super.key});
@@ -27,13 +33,18 @@ class SocialApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = _createRouter(ref);
+    final appThemeMode = ref.watch(themeNotifierProvider);
 
     return MaterialApp.router(
       title: 'Social App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
+      themeMode: appThemeMode == AppThemeMode.light
+          ? ThemeMode.light
+          : appThemeMode == AppThemeMode.dark
+              ? ThemeMode.dark
+              : ThemeMode.system,
       routerConfig: router,
     );
   }
@@ -95,6 +106,27 @@ class SocialApp extends ConsumerWidget {
           builder: (context, state) => const EditProfileScreen(),
         ),
         GoRoute(
+          path: '/profile/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return UserProfileScreen(userId: id);
+          },
+        ),
+        GoRoute(
+          path: '/profile/:id/followers',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return FollowersScreen(userId: id);
+          },
+        ),
+        GoRoute(
+          path: '/profile/:id/following',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return FollowingScreen(userId: id);
+          },
+        ),
+        GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsScreen(),
         ),
@@ -123,10 +155,21 @@ class SocialApp extends ConsumerWidget {
           builder: (context, state) => const ChatsListScreen(),
         ),
         GoRoute(
+          path: '/create-group',
+          builder: (context, state) => const CreateGroupScreen(),
+        ),
+        GoRoute(
           path: '/chat/:id',
           builder: (context, state) {
             final id = state.pathParameters['id']!;
             return ChatRoomScreen(conversationId: id);
+          },
+        ),
+        GoRoute(
+          path: '/chat-settings/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return ChatSettingsScreen(conversationId: id);
           },
         ),
       ],

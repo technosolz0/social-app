@@ -78,6 +78,23 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<ConversationMo
     }
   }
 
+  Future<bool> deleteConversation(String conversationId) async {
+    try {
+      await _api.customRequest(
+        method: 'DELETE',
+        path: '/chat/conversations/$conversationId/',
+      );
+      
+      // Update local storage and state
+      await _storage.deleteConversation(conversationId);
+      await loadConversations();
+      return true;
+    } catch (error) {
+      print('Error deleting conversation: $error');
+      return false;
+    }
+  }
+
   // Refresh conversations (force API call)
   Future<void> refresh() async {
     await loadConversations(forceRefresh: true);

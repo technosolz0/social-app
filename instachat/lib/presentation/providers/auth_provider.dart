@@ -12,7 +12,7 @@ part 'auth_provider.g.dart';
 
 // 📌 STATE: What data we're managing
 class AuthState {
-  final UserModel? user;           // Current logged-in user
+  final UserModel? user; // Current logged-in user
   final bool isLoading;
   final bool isAuthenticated;
   final String? errorMessage;
@@ -89,13 +89,9 @@ class AuthNotifier extends _$AuthNotifier {
 
       // 5. Track activity
       ref.read(activityTrackerProvider.notifier).trackLogin();
-
     } catch (e) {
       // Handle error
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
@@ -122,10 +118,7 @@ class AuthNotifier extends _$AuthNotifier {
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
@@ -140,20 +133,56 @@ class AuthNotifier extends _$AuthNotifier {
     }
   }
 
+  // 👤 UPDATE PROFILE METHOD
+  Future<void> updateProfile(Map<String, dynamic> profileData) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+
+    try {
+      final updatedUser = await _authRepository.updateProfile(profileData);
+      state = state.copyWith(user: updatedUser, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      rethrow;
+    }
+  }
+
   // Private helper methods
   Future<void> _checkAuthStatus() async {
     try {
-      final hasValidToken = await _authRepository.hasValidToken();
-      if (hasValidToken) {
-        final user = await _authRepository.getCurrentUser();
-        state = state.copyWith(
-          user: user,
-          isAuthenticated: true,
-          isLoading: false,
-        );
-      } else {
-        state = state.copyWith(isLoading: false, isAuthenticated: false);
+      // First check if we have stored tokens
+      final storedToken = await _authRepository.getAccessToken();
+      if (storedToken != null && storedToken.isNotEmpty) {
+        // Try to validate the stored token
+        final hasValidToken = await _authRepository.hasValidToken();
+        if (hasValidToken) {
+          final user = await _authRepository.getCurrentUser();
+          state = state.copyWith(
+            user: user,
+            isAuthenticated: true,
+            isLoading: false,
+          );
+          return;
+        }
       }
+
+      // Token validation failed, try automatic login with stored credentials
+      final credentials = await _authRepository.localStorage.getUserCredentials();
+      final identifier = credentials['identifier'];
+      final password = credentials['password'];
+
+      if (identifier != null && password != null && identifier.isNotEmpty && password.isNotEmpty) {
+        try {
+          // Attempt automatic login
+          await login(identifier: identifier, password: password);
+          return; // Login successful, state already updated
+        } catch (e) {
+          // Automatic login failed, clear stored credentials
+          await _authRepository.localStorage.clearSecureData();
+        }
+      }
+
+      // No valid token and no credentials, user needs to login manually
+      state = state.copyWith(isLoading: false, isAuthenticated: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, isAuthenticated: false);
     }

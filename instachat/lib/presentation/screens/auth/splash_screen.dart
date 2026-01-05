@@ -17,6 +17,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
+  bool _authCheckCompleted = false;
+  bool _animationCompleted = false;
+  String _statusText = 'Initializing...';
+
   @override
   void initState() {
     super.initState();
@@ -27,48 +31,69 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeIn,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.5,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.elasticOut,
-    ));
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    );
 
     // Start animation
     _animationController.forward();
 
-    // Navigate after animation completes
+    // Start authentication check
+    _checkAuthentication();
+
+    // Listen for animation completion
     _animationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        _navigateToNextScreen();
+        setState(() => _animationCompleted = true);
+        _tryNavigate();
       }
     });
   }
 
-  Future<void> _navigateToNextScreen() async {
-    // Check authentication status
-    await ref.read(authNotifierProvider.notifier).checkAuthStatus();
+  Future<void> _checkAuthentication() async {
+    try {
+      setState(() => _statusText = 'Checking stored credentials...');
 
-    final authState = ref.read(authNotifierProvider);
+      // Check authentication status
+      await ref.read(authNotifierProvider.notifier).checkAuthStatus();
 
-    // Small delay for better UX
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (mounted) {
+      final authState = ref.read(authNotifierProvider);
       if (authState.isAuthenticated) {
-        context.go('/home');
+        setState(() => _statusText = 'Welcome back!');
       } else {
-        context.go('/login');
+        setState(() => _statusText = 'Please sign in');
       }
+    } catch (e) {
+      // Handle any errors during auth check
+      debugPrint('Auth check error: $e');
+      setState(() => _statusText = 'Preparing app...');
+    } finally {
+      if (mounted) {
+        setState(() => _authCheckCompleted = true);
+        _tryNavigate();
+      }
+    }
+  }
+
+  void _tryNavigate() {
+    // Only navigate when both animation and auth check are completed
+    if (_animationCompleted && _authCheckCompleted && mounted) {
+      final authState = ref.read(authNotifierProvider);
+
+      // Small delay for better UX
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          if (authState.isAuthenticated) {
+            context.go('/home');
+          } else {
+            context.go('/login');
+          }
+        }
+      });
     }
   }
 
@@ -99,7 +124,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       height: 120,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(AppSizes.borderRadiusLarge),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.borderRadiusLarge,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.2),
@@ -151,6 +178,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           Colors.white.withOpacity(0.8),
                         ),
                         strokeWidth: 3,
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSizes.paddingMedium),
+
+                    // Status Text
+                    AnimatedOpacity(
+                      opacity: _authCheckCompleted ? 0.0 : 1.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: Text(
+                        _statusText,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.7),
+                          fontWeight: FontWeight.w400,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ],

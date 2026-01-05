@@ -79,6 +79,9 @@ TEMPLATES = [
 
 ROOT_URLCONF = 'config.urls'
 
+# Disable APPEND_SLASH to avoid issues with API endpoints
+APPEND_SLASH = False
+
 # AUTH_USER_MODEL = 'users.CustomUser'
 AUTH_USER_MODEL = 'users.CustomUser'
 

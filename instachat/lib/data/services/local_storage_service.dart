@@ -110,6 +110,19 @@ class LocalStorageService {
     return await _secureStorage.read(key: _userIdKey);
   }
 
+  // Save user credentials for automatic login
+  Future<void> saveUserCredentials(String identifier, String password) async {
+    await _secureStorage.write(key: 'user_identifier', value: identifier);
+    await _secureStorage.write(key: 'user_password', value: password);
+  }
+
+  // Get stored user credentials
+  Future<Map<String, String?>> getUserCredentials() async {
+    final identifier = await _secureStorage.read(key: 'user_identifier');
+    final password = await _secureStorage.read(key: 'user_password');
+    return {'identifier': identifier, 'password': password};
+  }
+
   // Clear all secure data (logout)
   Future<void> clearSecureData() async {
     await _secureStorage.deleteAll();
@@ -224,7 +237,18 @@ class LocalStorageService {
   }
 
   List<PostModel> getAllPosts() {
-    final postsJson = getUserPreference('posts') as List<dynamic>? ?? [];
+    final storedData = getUserPreference('posts');
+    List<dynamic> postsJson = [];
+
+    if (storedData is String) {
+      // Data is stored as JSON string, decode it
+      postsJson = jsonDecode(storedData) as List<dynamic>;
+    } else if (storedData is List<dynamic>) {
+      // Data is already a list
+      postsJson = storedData;
+    }
+    // If storedData is null or neither String nor List, postsJson remains empty
+
     final posts = postsJson.map((json) => PostModel.fromJson(json)).toList();
     posts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return posts;
@@ -256,10 +280,30 @@ class LocalStorageService {
   }
 
   List<ConversationModel> getAllConversations() {
-    final conversationsJson = getUserPreference('conversations') as List<dynamic>? ?? [];
+    final storedData = getUserPreference('conversations');
+    List<dynamic> conversationsJson = [];
+
+    if (storedData is String) {
+      // Data is stored as JSON string, decode it
+      conversationsJson = jsonDecode(storedData) as List<dynamic>;
+    } else if (storedData is List<dynamic>) {
+      // Data is already a list
+      conversationsJson = storedData;
+    }
+    // If storedData is null or neither String nor List, conversationsJson remains empty
+
     final conversations = conversationsJson.map((json) => ConversationModel.fromJson(json)).toList();
     conversations.sort((a, b) => (b.updatedAt ?? b.createdAt).compareTo(a.updatedAt ?? a.createdAt));
     return conversations;
+  }
+
+  Future<void> deleteConversation(String conversationId) async {
+    final conversations = getAllConversations();
+    conversations.removeWhere((c) => c.id == conversationId);
+    await saveUserPreference('conversations', conversations.map((c) => c.toJson()).toList());
+    
+    // Also clean up messages for this conversation
+    await _prefs.remove('messages_$conversationId');
   }
 
   // ===========================================================================
@@ -274,7 +318,18 @@ class LocalStorageService {
   }
 
   List<MessageModel> getMessagesForConversation(String conversationId) {
-    final messagesJson = getUserPreference('messages_$conversationId') as List<dynamic>? ?? [];
+    final storedData = getUserPreference('messages_$conversationId');
+    List<dynamic> messagesJson = [];
+
+    if (storedData is String) {
+      // Data is stored as JSON string, decode it
+      messagesJson = jsonDecode(storedData) as List<dynamic>;
+    } else if (storedData is List<dynamic>) {
+      // Data is already a list
+      messagesJson = storedData;
+    }
+    // If storedData is null or neither String nor List, messagesJson remains empty
+
     final messages = messagesJson.map((json) => MessageModel.fromJson(json)).toList();
     messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return messages;
@@ -296,7 +351,18 @@ class LocalStorageService {
   }
 
   List<NotificationModel> getAllNotifications() {
-    final notificationsJson = getUserPreference('notifications') as List<dynamic>? ?? [];
+    final storedData = getUserPreference('notifications');
+    List<dynamic> notificationsJson = [];
+
+    if (storedData is String) {
+      // Data is stored as JSON string, decode it
+      notificationsJson = jsonDecode(storedData) as List<dynamic>;
+    } else if (storedData is List<dynamic>) {
+      // Data is already a list
+      notificationsJson = storedData;
+    }
+    // If storedData is null or neither String nor List, notificationsJson remains empty
+
     final notifications = notificationsJson.map((json) => NotificationModel.fromJson(json)).toList();
     notifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return notifications;
@@ -327,7 +393,18 @@ class LocalStorageService {
   }
 
   List<StoryModel> getAllStories() {
-    final storiesJson = getUserPreference('stories') as List<dynamic>? ?? [];
+    final storedData = getUserPreference('stories');
+    List<dynamic> storiesJson = [];
+
+    if (storedData is String) {
+      // Data is stored as JSON string, decode it
+      storiesJson = jsonDecode(storedData) as List<dynamic>;
+    } else if (storedData is List<dynamic>) {
+      // Data is already a list
+      storiesJson = storedData;
+    }
+    // If storedData is null or neither String nor List, storiesJson remains empty
+
     final stories = storiesJson.map((json) => StoryModel.fromJson(json)).toList();
     // Filter out expired stories
     final now = DateTime.now();
@@ -354,7 +431,18 @@ class LocalStorageService {
   }
 
   List<CommentModel> getCommentsForPost(String postId) {
-    final commentsJson = getUserPreference('comments_$postId') as List<dynamic>? ?? [];
+    final storedData = getUserPreference('comments_$postId');
+    List<dynamic> commentsJson = [];
+
+    if (storedData is String) {
+      // Data is stored as JSON string, decode it
+      commentsJson = jsonDecode(storedData) as List<dynamic>;
+    } else if (storedData is List<dynamic>) {
+      // Data is already a list
+      commentsJson = storedData;
+    }
+    // If storedData is null or neither String nor List, commentsJson remains empty
+
     final comments = commentsJson.map((json) => CommentModel.fromJson(json)).toList();
     comments.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return comments;
