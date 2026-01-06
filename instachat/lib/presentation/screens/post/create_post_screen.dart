@@ -75,12 +75,26 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       if (mediaUrl != null) {
         // Create post using provider
         final postProvider = ref.read(postFeedNotifierProvider.notifier);
-        // Note: This would need to be implemented in the post provider
-        // For now, just show success
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Post created successfully!')),
+        final newPost = await postProvider.createPost(
+          postType: _postType,
+          mediaUrl: mediaUrl,
+          caption: _captionController.text.trim(),
+          hashtags: [], // TODO: Extract hashtags from caption
         );
-        context.go('/home');
+
+        if (newPost != null) {
+          // Track activity
+          ref.read(activityTrackerProvider.notifier).trackPostView(newPost.id);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Post created successfully!')),
+          );
+          context.go('/home');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to create post')),
+          );
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

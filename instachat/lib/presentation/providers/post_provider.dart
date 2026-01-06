@@ -80,6 +80,32 @@ class PostFeedNotifier extends AutoDisposeAsyncNotifier<List<PostModel>> {
     }
   }
 
+  // Create a new post
+  Future<PostModel?> createPost({
+    required String postType,
+    required String mediaUrl,
+    String? caption,
+    List<String>? hashtags,
+  }) async {
+    try {
+      final newPost = await _api.createPost(
+        postType: postType,
+        mediaUrl: mediaUrl,
+        caption: caption,
+        hashtags: hashtags,
+      );
+
+      // Add to the beginning of the feed
+      final currentPosts = state.value ?? [];
+      state = AsyncValue.data([newPost, ...currentPosts]);
+
+      return newPost;
+    } catch (e) {
+      // Don't update state on error
+      return null;
+    }
+  }
+
   // Refresh feed manually
   Future<void> refresh() async {
     state = const AsyncValue.loading();

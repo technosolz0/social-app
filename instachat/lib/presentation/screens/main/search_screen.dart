@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/constants/theme_constants.dart';
+import '../../../data/services/api_service.dart';
+import '../../../data/models/user_model.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -13,43 +16,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _isSearching = false;
-
-  // Mock data for demonstration
-  final List<Map<String, dynamic>> _recentSearches = [
-    {'type': 'user', 'name': 'john_doe', 'avatar': null},
-    {'type': 'user', 'name': 'jane_smith', 'avatar': null},
-    {'type': 'hashtag', 'name': '#flutter', 'count': '1.2M posts'},
-    {'type': 'hashtag', 'name': '#dart', 'count': '850K posts'},
-  ];
-
-  final List<Map<String, dynamic>> _searchResults = [
-    {
-      'type': 'user',
-      'name': 'john_doe',
-      'fullName': 'John Doe',
-      'avatar': null,
-      'isVerified': true,
-      'followers': '1.2M'
-    },
-    {
-      'type': 'user',
-      'name': 'jane_smith',
-      'fullName': 'Jane Smith',
-      'avatar': null,
-      'isVerified': false,
-      'followers': '850K'
-    },
-    {
-      'type': 'hashtag',
-      'name': '#flutter',
-      'count': '1.2M posts'
-    },
-    {
-      'type': 'hashtag',
-      'name': '#dart',
-      'count': '850K posts'
-    },
-  ];
+  List<UserModel> _searchResults = [];
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -57,14 +26,43 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.dispose();
   }
 
-  void _onSearchChanged(String query) {
+  void _onSearchChanged(String query) async {
     setState(() {
-      _searchQuery = query;
-      _isSearching = query.isNotEmpty;
+      _searchQuery = query.trim();
+      _isSearching = _searchQuery.isNotEmpty;
+      if (!_isSearching) {
+        _searchResults = [];
+        _errorMessage = null;
+      }
     });
 
-    // TODO: Implement actual search API call
-    // ref.read(searchProvider.notifier).search(query);
+    if (_searchQuery.isNotEmpty && _searchQuery.length >= 2) {
+      await _performSearch(_searchQuery);
+    }
+  }
+
+  Future<void> _performSearch(String query) async {
+    if (query.isEmpty) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final apiService = ApiService();
+      final results = await apiService.searchUsers(query, limit: 20);
+      setState(() {
+        _searchResults = results;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+        _searchResults = [];
+      });
+    }
   }
 
   void _clearSearch() {
@@ -72,7 +70,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       _searchController.clear();
       _searchQuery = '';
       _isSearching = false;
+      _searchResults = [];
+      _errorMessage = null;
     });
+  }
+
+  void _navigateToUserProfile(String userId) {
+    context.push('/profile/$userId');
   }
 
   @override
@@ -89,7 +93,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             controller: _searchController,
             onChanged: _onSearchChanged,
             decoration: InputDecoration(
-              hintText: 'Search users, posts, hashtags...',
+              hintText: 'Search users...',
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
@@ -108,46 +112,59 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: _isSearching ? _buildSearchResults() : _buildRecentSearches(),
+      body: SafeArea(
+        child: _buildBody(),
+      ),
     );
   }
 
-  Widget _buildRecentSearches() {
-    return ListView(
-      padding: const EdgeInsets.all(AppSizes.paddingMedium),
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildBody() {
+    if (!_isSearching) {
+      return _buildEmptyState();
+    }
+
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              'Recent',
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: AppSizes.paddingMedium),
+            Text(
+              'Search failed',
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+                color: Colors.grey[600],
               ),
             ),
-            TextButton(
-              onPressed: () {
-                // TODO: Clear recent searches
-              },
-              child: const Text('Clear all'),
+            const SizedBox(height: AppSizes.paddingSmall),
+            Text(
+              _errorMessage!,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSizes.paddingMedium),
+            ElevatedButton(
+              onPressed: () => _performSearch(_searchQuery),
+              child: const Text('Try Again'),
             ),
           ],
         ),
-        const SizedBox(height: AppSizes.paddingMedium),
-        ..._recentSearches.map((item) => _buildSearchItem(item, isRecent: true)),
-      ],
-    );
-  }
+      );
+    }
 
-  Widget _buildSearchResults() {
-    final filteredResults = _searchResults.where((item) {
-      final name = item['name'].toString().toLowerCase();
-      final query = _searchQuery.toLowerCase();
-      return name.contains(query);
-    }).toList();
-
-    if (filteredResults.isEmpty) {
+    if (_searchResults.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -159,7 +176,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
             const SizedBox(height: AppSizes.paddingMedium),
             Text(
-              'No results found',
+              'No users found',
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.grey[600],
@@ -167,7 +184,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
             const SizedBox(height: AppSizes.paddingSmall),
             Text(
-              'Try searching for something else',
+              'Try searching for a different username',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -180,87 +197,88 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(AppSizes.paddingMedium),
-      itemCount: filteredResults.length,
+      itemCount: _searchResults.length,
       itemBuilder: (context, index) {
-        return _buildSearchItem(filteredResults[index]);
+        final user = _searchResults[index];
+        return _buildUserItem(user);
       },
     );
   }
 
-  Widget _buildSearchItem(Map<String, dynamic> item, {bool isRecent = false}) {
-    if (item['type'] == 'user') {
-      return ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.grey[300],
-          child: Icon(
-            Icons.person,
-            color: Colors.grey[600],
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search,
+            size: 64,
+            color: Colors.grey[300],
           ),
-        ),
-        title: Row(
-          children: [
-            Text(
-              item['name'],
-              style: const TextStyle(fontWeight: FontWeight.w500),
+          const SizedBox(height: AppSizes.paddingMedium),
+          Text(
+            'Search for users',
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
             ),
-            if (item['isVerified'] == true) ...[
-              const SizedBox(width: 4),
-              Icon(
-                Icons.verified,
-                size: 16,
-                color: Colors.blue,
-              ),
-            ],
-          ],
-        ),
-        subtitle: item['fullName'] != null
-            ? Text('${item['fullName']} • ${item['followers']} followers')
-            : Text('${item['followers']} followers'),
-        trailing: isRecent
-            ? IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                onPressed: () {
-                  // TODO: Remove from recent searches
-                },
-              )
-            : null,
-        onTap: () {
-          // TODO: Navigate to user profile
-        },
-      );
-    } else if (item['type'] == 'hashtag') {
-      return ListTile(
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
           ),
-          child: const Icon(
-            Icons.tag,
-            color: Colors.grey,
+          const SizedBox(height: AppSizes.paddingSmall),
+          Text(
+            'Find friends and connect with people',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
           ),
-        ),
-        title: Text(
-          item['name'],
-          style: const TextStyle(fontWeight: FontWeight.w500),
-        ),
-        subtitle: Text(item['count']),
-        trailing: isRecent
-            ? IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                onPressed: () {
-                  // TODO: Remove from recent searches
-                },
-              )
-            : null,
-        onTap: () {
-          // TODO: Navigate to hashtag page
-        },
-      );
-    }
+        ],
+      ),
+    );
+  }
 
-    return const SizedBox.shrink();
+  Widget _buildUserItem(UserModel user) {
+    return ListTile(
+      leading: CircleAvatar(
+        radius: 24,
+        backgroundImage: user.avatar != null
+            ? NetworkImage(user.avatar!)
+            : null,
+        backgroundColor: Colors.grey[300],
+        child: user.avatar == null
+            ? Text(
+                user.username.isNotEmpty ? user.username[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            : null,
+      ),
+      title: Row(
+        children: [
+          Text(
+            user.username,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+          if (user.isVerified) ...[
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.verified,
+              size: 16,
+              color: Colors.blue,
+            ),
+          ],
+        ],
+      ),
+      subtitle: user.bio != null && user.bio!.isNotEmpty
+          ? Text(user.bio!)
+          : Text('${user.followersCount} followers'),
+      onTap: () => _navigateToUserProfile(user.id),
+    );
   }
 }

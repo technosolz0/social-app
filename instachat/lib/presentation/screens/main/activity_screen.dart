@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../core/constants/theme_constants.dart';
 import '../../providers/activity_tracker_provider.dart';
@@ -40,9 +41,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           ),
         ],
       ),
-      body: activities.isEmpty
-          ? _buildEmptyState()
-          : _buildActivityList(activities),
+      body: SafeArea(
+        child: activities.isEmpty
+            ? _buildEmptyState()
+            : _buildActivityList(activities),
+      ),
     );
   }
 
@@ -302,21 +305,73 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           ListTile(
             leading: const Icon(Icons.clear_all),
             title: const Text('Clear all activity'),
-            onTap: () {
-              Navigator.pop(context);
-              // TODO: Clear all activities
-            },
+            onTap: () => _clearAllActivities(context),
           ),
           ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('Activity settings'),
-            onTap: () {
-              Navigator.pop(context);
-              // TODO: Navigate to settings
-            },
+            onTap: () => _openActivitySettings(context),
           ),
         ],
       ),
     );
+  }
+
+  void _clearAllActivities(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Activity'),
+        content: const Text(
+          'Are you sure you want to clear all your activity history? '
+          'This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Close bottom sheet
+
+              try {
+                await ref.read(activityTrackerProvider.notifier).clearHistory();
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('All activity history cleared'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to clear activity: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'Clear All',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openActivitySettings(BuildContext context) {
+    Navigator.pop(context); // Close bottom sheet
+
+    // Navigate to settings screen with activity tab
+    context.push('/settings', extra: {'tab': 'activity'});
   }
 }

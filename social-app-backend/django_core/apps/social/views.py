@@ -139,10 +139,10 @@ class CommentViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
 
-        # Set post_id from URL parameter if available
+        # Set post from URL parameter if available
         post_id = self.kwargs.get('post_id')
         if post_id:
-            data['post_id'] = post_id
+            data['post'] = post_id
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)

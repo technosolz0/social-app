@@ -206,7 +206,7 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
     setState(() => _isSubmitting = true);
     try {
       final apiService = ApiService();
-      final replyData = await apiService.addComment('', text, parentId: parentCommentId);
+      final replyData = await apiService.addComment(widget.post.id, text, parentId: parentCommentId);
       final reply = CommentModel.fromJson(replyData);
 
       // Find parent comment and add reply

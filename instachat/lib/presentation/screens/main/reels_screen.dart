@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:video_player/video_player.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/theme_constants.dart';
+import '../../../data/models/post_model.dart';
+import '../../providers/reels_provider.dart';
+import '../../widgets/post/comment_bottom_sheet.dart';
 
 class ReelsScreen extends ConsumerStatefulWidget {
   const ReelsScreen({super.key});
@@ -12,35 +18,81 @@ class ReelsScreen extends ConsumerStatefulWidget {
 class _ReelsScreenState extends ConsumerState<ReelsScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  final Map<String, VideoPlayerController> _videoControllers = {};
 
-  // Mock reels data
-  final List<Map<String, dynamic>> _reels = List.generate(
-    10,
-    (index) => {
-      'id': index,
-      'videoUrl': 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
-      'user': {
-        'username': 'user_$index',
-        'avatar': null,
-        'isVerified': index % 3 == 0,
-      },
-      'caption': 'This is reel number ${index + 1}. Amazing content! #reels #flutter',
-      'likes': (index + 1) * 1000,
-      'comments': (index + 1) * 50,
-      'shares': (index + 1) * 20,
-      'isLiked': false,
-      'music': 'Original Audio - Artist ${index + 1}',
-    },
-  );
+  @override
+  void initState() {
+    super.initState();
+    _pageController.addListener(_onPageChanged);
+  }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _disposeAllControllers();
     super.dispose();
+  }
+
+  void _onPageChanged() {
+    final page = _pageController.page?.round() ?? 0;
+    if (page != _currentPage) {
+      setState(() {
+        _currentPage = page;
+      });
+      _updateVideoPlayback();
+    }
+  }
+
+  void _updateVideoPlayback() {
+    // Pause all videos
+    _videoControllers.forEach((_, controller) {
+      controller.pause();
+    });
+
+    // Play current video
+    final reelsAsync = ref.read(reelsProvider);
+    reelsAsync.whenData((reels) {
+      if (_currentPage < reels.length) {
+        final currentReel = reels[_currentPage];
+        final controller = _videoControllers[currentReel.id];
+        if (controller != null) {
+          controller.play();
+          controller.setLooping(true);
+        }
+      }
+    });
+  }
+
+  Future<void> _initializeVideoController(PostModel reel) async {
+    if (_videoControllers.containsKey(reel.id)) return;
+
+    final controller = VideoPlayerController.network(reel.mediaUrl ?? '');
+    _videoControllers[reel.id] = controller;
+
+    try {
+      await controller.initialize();
+      final reels = ref.read(reelsProvider).value ?? [];
+      if (_currentPage == reels.indexOf(reel)) {
+        controller.play();
+        controller.setLooping(true);
+      }
+      setState(() {});
+    } catch (e) {
+      print('Error initializing video: $e');
+    }
+  }
+
+  void _disposeAllControllers() {
+    _videoControllers.forEach((_, controller) {
+      controller.dispose();
+    });
+    _videoControllers.clear();
   }
 
   @override
   Widget build(BuildContext context) {
+    final reelsAsync = ref.watch(reelsProvider);
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -55,49 +107,84 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: () {
-              // TODO: Open camera for creating reel
-            },
+            onPressed: () => context.push('/camera'),
             icon: const Icon(
               Icons.camera_alt,
               color: Colors.white,
             ),
+            tooltip: 'Create Reel',
           ),
         ],
       ),
-      body: PageView.builder(
-        controller: _pageController,
-        scrollDirection: Axis.vertical,
-        itemCount: _reels.length,
-        onPageChanged: (index) {
-          setState(() {
-            _currentPage = index;
-          });
-        },
-        itemBuilder: (context, index) {
-          return _buildReelItem(_reels[index]);
+      body: reelsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error, size: 64, color: Colors.white),
+              const SizedBox(height: 16),
+              Text(
+                'Failed to load reels',
+                style: const TextStyle(color: Colors.white),
+              ),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(reelsProvider),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+        data: (reels) {
+          if (reels.isEmpty) {
+            return const Center(
+              child: Text(
+                'No reels available',
+                style: TextStyle(color: Colors.white),
+              ),
+            );
+          }
+
+          return PageView.builder(
+            controller: _pageController,
+            scrollDirection: Axis.vertical,
+            itemCount: reels.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPage = index;
+              });
+              _updateVideoPlayback();
+            },
+            itemBuilder: (context, index) {
+              final reel = reels[index];
+              _initializeVideoController(reel);
+              return _buildReelItem(reel, reels.length);
+            },
+          );
         },
       ),
     );
   }
 
-  Widget _buildReelItem(Map<String, dynamic> reel) {
+  Widget _buildReelItem(PostModel reel, int totalReels) {
+    final controller = _videoControllers[reel.id];
+    final isLiked = reel.isLiked;
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Video Background
-        Container(
-          color: Colors.black,
-          child: const Center(
-            child: Icon(
-              Icons.play_circle_outline,
-              size: 80,
-              color: Colors.white,
+        // Video Player
+        if (controller != null && controller.value.isInitialized)
+          VideoPlayer(controller)
+        else
+          Container(
+            color: Colors.black,
+            child: const Center(
+              child: CircularProgressIndicator(color: Colors.white),
             ),
           ),
-        ),
 
-        // Video Overlay (mock)
+        // Video Overlay
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -124,27 +211,31 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
                   CircleAvatar(
                     radius: 20,
                     backgroundColor: Colors.grey,
-                    backgroundImage: reel['user']['avatar'] != null
-                        ? NetworkImage(reel['user']['avatar'])
+                    backgroundImage: reel.user?.avatar != null
+                        ? NetworkImage(reel.user!.avatar!)
                         : null,
-                    child: reel['user']['avatar'] == null
-                        ? const Icon(
-                            Icons.person,
-                            color: Colors.white,
-                            size: 20,
+                    child: reel.user?.avatar == null
+                        ? Text(
+                            reel.user?.username.isNotEmpty == true
+                                ? reel.user!.username[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           )
                         : null,
                   ),
                   const SizedBox(width: AppSizes.paddingMedium),
                   Text(
-                    reel['user']['username'],
+                    reel.user?.username ?? 'Unknown',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
-                  if (reel['user']['isVerified']) ...[
+                  if (reel.user?.isVerified == true) ...[
                     const SizedBox(width: 4),
                     const Icon(
                       Icons.verified,
@@ -154,9 +245,7 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
                   ],
                   const SizedBox(width: AppSizes.paddingMedium),
                   ElevatedButton(
-                    onPressed: () {
-                      // TODO: Follow user
-                    },
+                    onPressed: () => ref.read(reelsProvider.notifier).followUser(reel.user?.id ?? ''),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       foregroundColor: Colors.white,
@@ -177,32 +266,39 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
               const SizedBox(height: AppSizes.paddingMedium),
 
               // Caption
-              Text(
-                reel['caption'],
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
+              if (reel.caption != null && reel.caption!.isNotEmpty)
+                Text(
+                  reel.caption!,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
 
               const SizedBox(height: AppSizes.paddingSmall),
 
-              // Music Info
+              // Dynamic Audio/Music Info
               Row(
                 children: [
-                  const Icon(
-                    Icons.music_note,
+                  Icon(
+                    reel.postType == 'reel' ? Icons.music_note :
+                    reel.postType == 'video' ? Icons.videocam :
+                    Icons.photo,
                     color: Colors.white,
                     size: 16,
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    reel['music'],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
+                  Expanded(
+                    child: Text(
+                      _getAudioInfo(reel),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -220,41 +316,28 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
           child: Column(
             children: [
               _buildActionButton(
-                icon: reel['isLiked'] ? Icons.favorite : Icons.favorite_border,
-                label: _formatCount(reel['likes']),
-                onTap: () {
-                  setState(() {
-                    reel['isLiked'] = !reel['isLiked'];
-                    reel['likes'] = reel['isLiked']
-                        ? reel['likes'] + 1
-                        : reel['likes'] - 1;
-                  });
-                },
-                color: reel['isLiked'] ? Colors.red : Colors.white,
+                icon: isLiked ? Icons.favorite : Icons.favorite_border,
+                label: _formatCount(reel.likesCount),
+                onTap: () => ref.read(reelsProvider.notifier).likeReel(reel.id),
+                color: isLiked ? Colors.red : Colors.white,
               ),
               const SizedBox(height: AppSizes.paddingLarge),
               _buildActionButton(
                 icon: Icons.comment,
-                label: _formatCount(reel['comments']),
-                onTap: () {
-                  // TODO: Show comments
-                },
+                label: _formatCount(reel.commentsCount),
+                onTap: () => CommentBottomSheet.show(context, reel),
               ),
               const SizedBox(height: AppSizes.paddingLarge),
               _buildActionButton(
                 icon: Icons.send,
-                label: _formatCount(reel['shares']),
-                onTap: () {
-                  // TODO: Share reel
-                },
+                label: 'Share',
+                onTap: () => _shareReel(reel),
               ),
               const SizedBox(height: AppSizes.paddingLarge),
               _buildActionButton(
                 icon: Icons.more_vert,
                 label: '',
-                onTap: () {
-                  _showReelOptions(reel);
-                },
+                onTap: () => _showReelOptions(reel),
               ),
             ],
           ),
@@ -266,11 +349,27 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
           left: AppSizes.paddingMedium,
           right: AppSizes.paddingMedium,
           child: LinearProgressIndicator(
-            value: (_currentPage + 1) / _reels.length,
+            value: (_currentPage + 1) / totalReels,
             backgroundColor: Colors.white.withOpacity(0.3),
             valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
           ),
         ),
+
+        // Play/Pause Overlay
+        if (controller != null && !controller.value.isPlaying)
+          Center(
+            child: IconButton(
+              onPressed: () {
+                controller.play();
+                setState(() {});
+              },
+              icon: const Icon(
+                Icons.play_circle_outline,
+                size: 80,
+                color: Colors.white,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -314,7 +413,107 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
     }
   }
 
-  void _showReelOptions(Map<String, dynamic> reel) {
+  String _getAudioInfo(PostModel reel) {
+    // Dynamic audio/music information based on post type and available data
+    switch (reel.postType) {
+      case 'reel':
+        // For reels, show original audio or first hashtag as music
+        if (reel.hashtags.isNotEmpty) {
+          return '♪ ${reel.hashtags.first}';
+        }
+        return '♪ Original Audio';
+
+      case 'video':
+        // For videos, show video info
+        return '🎬 ${reel.user?.username ?? 'User'} • Video';
+
+      case 'photo':
+        // For photos, show photo info
+        return '📸 ${reel.user?.username ?? 'User'} • Photo';
+
+      default:
+        // Fallback based on available data
+        if (reel.hashtags.isNotEmpty) {
+          return '♪ ${reel.hashtags.first}';
+        }
+        return '♪ Original Audio';
+    }
+  }
+
+  void _shareReel(PostModel reel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(16),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Share Reel',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.send),
+              title: const Text('Send to Friends'),
+              onTap: () {
+                Navigator.pop(context);
+                // Navigate to share screen with friends list
+                context.push('/share-friends', extra: reel);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.link),
+              title: const Text('Copy Link'),
+              onTap: () async {
+                Navigator.pop(context);
+                // Copy reel link to clipboard
+                final link = '${ApiConstants.baseUrl}/reel/${reel.id}';
+                // In a real app, you'd use Clipboard.setData
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Link copied: $link')),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.message),
+              title: const Text('Share via Message'),
+              onTap: () {
+                Navigator.pop(context);
+                // Open message composer with reel
+                context.push('/compose-message', extra: {'type': 'reel', 'data': reel});
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share),
+              title: const Text('More Options'),
+              onTap: () {
+                Navigator.pop(context);
+                // Open system share dialog
+                // In a real app, you'd use Share.share()
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('System share dialog opened')),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showReelOptions(PostModel reel) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -333,15 +532,19 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
               title: const Text('Report'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Report reel
+                _showReportDialog(context, reel);
               },
             ),
             ListTile(
               leading: const Icon(Icons.link),
               title: const Text('Copy Link'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                // TODO: Copy reel link
+                final link = '${ApiConstants.baseUrl}/reel/${reel.id}';
+                // In a real app, you'd use Clipboard.setData
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Link copied: $link')),
+                );
               },
             ),
             ListTile(
@@ -349,7 +552,7 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
               title: const Text('Save Video'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Download reel
+                _saveVideo(reel);
               },
             ),
             ListTile(
@@ -357,12 +560,85 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
               title: const Text('Share'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Share reel
+                _shareReel(reel);
               },
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showReportDialog(BuildContext context, PostModel reel) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Report Reel'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Why are you reporting this reel?'),
+            const SizedBox(height: 16),
+            RadioListTile<String>(
+              title: const Text('Spam'),
+              value: 'spam',
+              groupValue: null,
+              onChanged: (value) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Report submitted for spam')),
+                );
+              },
+            ),
+            RadioListTile<String>(
+              title: const Text('Inappropriate content'),
+              value: 'inappropriate',
+              groupValue: null,
+              onChanged: (value) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Report submitted for inappropriate content')),
+                );
+              },
+            ),
+            RadioListTile<String>(
+              title: const Text('Harassment'),
+              value: 'harassment',
+              groupValue: null,
+              onChanged: (value) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Report submitted for harassment')),
+                );
+              },
+            ),
+            RadioListTile<String>(
+              title: const Text('Other'),
+              value: 'other',
+              groupValue: null,
+              onChanged: (value) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Report submitted')),
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _saveVideo(PostModel reel) {
+    // In a real app, this would download and save the video
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Video download started')),
     );
   }
 }

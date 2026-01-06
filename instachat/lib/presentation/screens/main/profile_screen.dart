@@ -58,21 +58,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               ),
             ],
           ),
-          body: SingleChildScrollView(
-            child: Column(
-              children: [
-                // Profile Header
-                _buildProfileHeader(context, user),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Profile Header
+                  _buildProfileHeader(context, user),
 
-                // Stats
-                _buildStats(context, user),
+                  // Stats
+                  _buildStats(context, user),
 
-                // Action Buttons
-                _buildActionButtons(context),
+                  // Action Buttons
+                  _buildActionButtons(context),
 
-                // Posts Grid
-                _buildPostsGrid(),
-              ],
+                  // Posts Grid
+                  _buildPostsGrid(),
+                ],
+              ),
             ),
           ),
         );

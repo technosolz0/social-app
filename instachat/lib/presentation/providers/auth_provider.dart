@@ -176,14 +176,15 @@ class AuthNotifier extends _$AuthNotifier {
           await login(identifier: identifier, password: password);
           return; // Login successful, state already updated
         } catch (e) {
-          // Automatic login failed, clear stored credentials
-          await _authRepository.localStorage.clearSecureData();
+          // Automatic login failed, don't clear credentials to allow retry next time
+          // Just continue to manual login
         }
       }
 
       // No valid token and no credentials, user needs to login manually
       state = state.copyWith(isLoading: false, isAuthenticated: false);
     } catch (e) {
+      // If checking auth status fails, don't clear credentials, just set as not authenticated
       state = state.copyWith(isLoading: false, isAuthenticated: false);
     }
   }

@@ -19,6 +19,11 @@ import 'presentation/screens/chat/chats_list_screen.dart';
 import 'presentation/screens/chat/chat_room_screen.dart';
 import 'presentation/screens/chat/create_group_screen.dart';
 import 'presentation/screens/chat/chat_settings_screen.dart';
+import 'presentation/screens/chat/edit_group_screen.dart';
+import 'presentation/screens/gamification/badges_screen.dart';
+import 'presentation/screens/gamification/leaderboard_screen.dart';
+import 'presentation/screens/gamification/points_screen.dart';
+import 'presentation/screens/gamification/quests_screen.dart';
 
 import 'presentation/screens/profile/user_profile_screen.dart';
 import 'presentation/screens/profile/followers_screen.dart';
@@ -171,6 +176,29 @@ class SocialApp extends ConsumerWidget {
             final id = state.pathParameters['id']!;
             return ChatSettingsScreen(conversationId: id);
           },
+        ),
+        GoRoute(
+          path: '/edit-group/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return EditGroupScreen(conversationId: id);
+          },
+        ),
+        GoRoute(
+          path: '/badges',
+          builder: (context, state) => const BadgesScreen(),
+        ),
+        GoRoute(
+          path: '/leaderboard',
+          builder: (context, state) => const LeaderboardScreen(),
+        ),
+        GoRoute(
+          path: '/points',
+          builder: (context, state) => const PointsScreen(),
+        ),
+        GoRoute(
+          path: '/quests',
+          builder: (context, state) => const QuestsScreen(),
         ),
       ],
     );

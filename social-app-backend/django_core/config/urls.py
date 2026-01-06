@@ -72,6 +72,9 @@ urlpatterns = [
     # Chat endpoints
     path('api/v1/chat/', include('apps.chat.urls')),
 
+    # Notifications endpoints
+    path('api/v1/notifications/', include('apps.notifications.urls')),
+
     # Custom endpoints
     path('api/v1/likes/', LikeViewSet.as_view({'post': 'create', 'delete': 'destroy'})),
 ]

@@ -118,12 +118,12 @@ class ActivityTracker extends _$ActivityTracker {
 
   Future<void> _sendToServer(ActivityModel activity) async {
     try {
-      // TODO: Implement API call to backend
-      // final activityRepository = ref.read(activityRepositoryProvider);
-      // await activityRepository.trackActivity(activity);
-
-      // For now, just print (replace with actual API call)
-      print('Tracking activity: ${activity.activityType} with metadata: ${activity.metadata}');
+      final apiService = ApiService();
+      await apiService.customRequest(
+        method: 'POST',
+        path: '/activities/',
+        data: activity.toJson(),
+      );
     } catch (e) {
       print('Failed to track activity: $e');
       // Could implement retry logic here

@@ -1,16 +1,17 @@
 class ApiConstants {
   // Base URL - Change this to your backend URL
   // For mobile emulator/device, use host machine IP instead of localhost
-  // Android emulator: 10.225.247.167, iOS simulator: 127.0.0.1 or host IP
-  static const String baseUrl = 'http://10.225.247.167:8000';
+  // Android emulator: 10.63.172.167, iOS simulator: 127.0.0.1 or host IP
+  // For physical devices, use your computer's IP address
+  static const String baseUrl = 'http://10.63.172.167:8000';
   static const String apiVersion = '/api/v1';
   static const String apiBaseUrl = '$baseUrl$apiVersion';
 
   // WebSocket URL
-  static const String wsUrl = 'ws://10.225.247.167:8002/ws';
+  static const String wsUrl = 'ws://10.63.172.167:8002/ws';
 
   // FastAPI Service URL (port 8001)
-  static const String fastApiBaseUrl = 'http://10.225.247.167:8001';
+  static const String fastApiBaseUrl = 'http://10.63.172.167:8001';
 
   // Auth Endpoints
   static const String login = '$apiBaseUrl/users/login/';
@@ -92,6 +93,6 @@ class ApiConstants {
   static const String uploadVideo = '$upload/video/';
 
   // Request timeouts
-  static const Duration connectTimeout = Duration(seconds: 30);
-  static const Duration receiveTimeout = Duration(seconds: 30);
+  static const Duration connectTimeout = Duration(seconds: 10);
+  static const Duration receiveTimeout = Duration(seconds: 15);
 }
