@@ -175,6 +175,20 @@ class LocalStorageService {
     return getUserPreference('language') ?? 'en';
   }
 
+  // Save app settings
+  Future<void> saveSettings(Map<String, dynamic> settings) async {
+    await saveUserPreference('app_settings', settings);
+  }
+
+  // Get app settings
+  Map<String, dynamic>? getSettings() {
+    final settings = getUserPreference('app_settings');
+    if (settings is Map<String, dynamic>) {
+      return settings;
+    }
+    return null;
+  }
+
   // Save notification settings
   Future<void> saveNotificationSettings(Map<String, bool> settings) async {
     await saveUserPreference('notification_settings', settings);

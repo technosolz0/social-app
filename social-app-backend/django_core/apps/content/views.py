@@ -101,6 +101,114 @@ class PostViewSet(viewsets.ModelViewSet):
                 'message': 'Liked successfully'
             }, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['get'])
+    def comments(self, request, pk=None):
+        """Get comments for a post"""
+        from apps.social.models import Comment
+        comments = Comment.objects.filter(
+            post_id=pk,
+            parent=None  # Only top-level comments
+        ).select_related('user__profile').order_by('-created_at')
+
+        comments_data = []
+        for comment in comments:
+            comments_data.append({
+                'id': str(comment.id),
+                'user': {
+                    'id': str(comment.user.id),
+                    'username': comment.user.username,
+                    'avatar': comment.user.profile.avatar,
+                },
+                'text': comment.text,
+                'likes_count': comment.likes_count,
+                'replies_count': comment.replies.count(),
+                'created_at': comment.created_at.isoformat(),
+                'is_liked': Like.objects.filter(
+                    user=request.user,
+                    comment=comment
+                ).exists(),
+            })
+
+        return Response({'results': comments_data})
+
+    @action(detail=True, methods=['post'])
+    def add_comment(self, request, pk=None):
+        """Add a comment to a post"""
+        from apps.social.models import Comment
+        text = request.data.get('text')
+        parent_id = request.data.get('parent_id')
+
+        if not text:
+            return Response({'error': 'Text is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        comment_data = {
+            'user': request.user,
+            'post_id': pk,
+            'text': text,
+        }
+
+        if parent_id:
+            try:
+                parent_comment = Comment.objects.get(id=parent_id)
+                comment_data['parent'] = parent_comment
+            except Comment.DoesNotExist:
+                return Response({'error': 'Parent comment not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        comment = Comment.objects.create(**comment_data)
+
+        return Response({
+            'id': str(comment.id),
+            'user': {
+                'id': str(comment.user.id),
+                'username': comment.user.username,
+                'avatar': comment.user.profile.avatar,
+            },
+            'text': comment.text,
+            'likes_count': 0,
+            'replies_count': 0,
+            'created_at': comment.created_at.isoformat(),
+            'is_liked': False,
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def share(self, request, pk=None):
+        """Share a post"""
+        try:
+            post = Post.objects.get(id=pk)
+        except Post.DoesNotExist:
+            return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create a shared post (you might want to create a separate Share model)
+        # For now, we'll just increment share count
+        post.shares_count += 1
+        post.save()
+
+        return Response({
+            'message': 'Post shared successfully',
+            'shares_count': post.shares_count,
+        })
+
+    @action(detail=False, methods=['get'])
+    def explore(self, request):
+        """Get explore feed (discover new content)"""
+        # Get posts from users not followed, ordered by engagement
+        from apps.social.models import Follow
+
+        following_ids = Follow.objects.filter(
+            follower=request.user
+        ).values_list('following_id', flat=True)
+
+        posts = Post.objects.exclude(
+            user_id__in=following_ids
+        ).exclude(
+            user=request.user
+        ).order_by(
+            '-likes_count', '-comments_count', '-created_at'
+        ).select_related('user__profile')[:50]
+
+        serializer = PostSerializer(posts, many=True, context={'request': request})
+        return Response(serializer.data)
+
 class StoryViewSet(viewsets.ModelViewSet):
     queryset = Story.objects.select_related('user__profile').all()
     serializer_class = StorySerializer
@@ -119,3 +227,61 @@ class StoryViewSet(viewsets.ModelViewSet):
             user_id__in=following_users,
             expires_at__gt=timezone.now()
         ).order_by('-created_at')
+
+    def create(self, request, *args, **kwargs):
+        from datetime import timedelta
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Set expiration time (24 hours from now)
+        story = serializer.save(
+            user=request.user,
+            expires_at=timezone.now() + timedelta(hours=24)
+        )
+
+        return Response(
+            StorySerializer(story).data,
+            status=status.HTTP_201_CREATED
+        )
+
+    @action(detail=True, methods=['post'])
+    def view(self, request, pk=None):
+        """Mark story as viewed"""
+        try:
+            story = Story.objects.get(id=pk)
+        except Story.DoesNotExist:
+            return Response({'error': 'Story not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Add user to viewed_by if not already there
+        if request.user not in story.viewed_by.all():
+            story.viewed_by.add(request.user)
+            story.views_count += 1
+            story.save()
+
+        return Response({
+            'message': 'Story viewed',
+            'views_count': story.views_count,
+        })
+
+    @action(detail=False, methods=['get'])
+    def my_stories(self, request):
+        """Get current user's stories"""
+        stories = Story.objects.filter(
+            user=request.user,
+            expires_at__gt=timezone.now()
+        ).order_by('-created_at')
+
+        serializer = StorySerializer(stories, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def highlights(self, request):
+        """Get story highlights (featured stories)"""
+        # Get popular recent stories
+        stories = Story.objects.filter(
+            expires_at__gt=timezone.now(),
+            views_count__gte=10  # Stories with at least 10 views
+        ).order_by('-views_count', '-created_at')[:20]
+
+        serializer = StorySerializer(stories, many=True, context={'request': request})
+        return Response(serializer.data)

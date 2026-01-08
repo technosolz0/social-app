@@ -7,6 +7,7 @@ class StoryModel {
   final String mediaUrl;
   final String storyType; // image, video
   final bool isSeen;
+  final int viewsCount;
   final DateTime createdAt;
   final DateTime expiresAt;
 
@@ -17,6 +18,7 @@ class StoryModel {
     required this.mediaUrl,
     required this.storyType,
     this.isSeen = false,
+    this.viewsCount = 0,
     required this.createdAt,
     required this.expiresAt,
   });
@@ -29,6 +31,7 @@ class StoryModel {
       mediaUrl: json['media_url'] as String,
       storyType: json['story_type'] as String,
       isSeen: json['is_seen'] as bool? ?? false,
+      viewsCount: json['views_count'] as int? ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
       expiresAt: DateTime.parse(json['expires_at'] as String),
     );
@@ -54,6 +57,7 @@ class StoryModel {
     String? mediaUrl,
     String? storyType,
     bool? isSeen,
+    int? viewsCount,
     DateTime? createdAt,
     DateTime? expiresAt,
   }) {
@@ -64,6 +68,7 @@ class StoryModel {
       mediaUrl: mediaUrl ?? this.mediaUrl,
       storyType: storyType ?? this.storyType,
       isSeen: isSeen ?? this.isSeen,
+      viewsCount: viewsCount ?? this.viewsCount,
       createdAt: createdAt ?? this.createdAt,
       expiresAt: expiresAt ?? this.expiresAt,
     );

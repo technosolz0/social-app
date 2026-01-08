@@ -4,10 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'presentation/screens/auth/splash_screen.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/register_screen.dart';
+import 'presentation/screens/auth/forgot_password_screen.dart';
 import 'presentation/screens/main/main_screen.dart';
 import 'presentation/screens/main/activity_screen.dart';
 import 'presentation/screens/post/create_post_screen.dart';
 import 'presentation/screens/post/post_detail_screen.dart';
+import 'presentation/screens/post/edit_post_screen.dart';
+import 'presentation/screens/post/post_comments_screen.dart';
 import 'presentation/screens/profile/edit_profile_screen.dart';
 import 'presentation/screens/settings/settings_screen.dart';
 import 'presentation/screens/settings/account_settings_screen.dart';
@@ -20,6 +23,9 @@ import 'presentation/screens/chat/chat_room_screen.dart';
 import 'presentation/screens/chat/create_group_screen.dart';
 import 'presentation/screens/chat/chat_settings_screen.dart';
 import 'presentation/screens/chat/edit_group_screen.dart';
+import 'presentation/screens/reels/create_reel_screen.dart';
+import 'presentation/screens/live/live_stream_screen.dart';
+import 'presentation/screens/live/live_viewer_screen.dart';
 import 'presentation/screens/gamification/badges_screen.dart';
 import 'presentation/screens/gamification/leaderboard_screen.dart';
 import 'presentation/screens/gamification/points_screen.dart';
@@ -63,7 +69,8 @@ class SocialApp extends ConsumerWidget {
         final isSplashScreen = state.matchedLocation == '/';
         final isLoggingIn =
             state.matchedLocation == '/login' ||
-            state.matchedLocation == '/register';
+            state.matchedLocation == '/register' ||
+            state.matchedLocation == '/forgot-password';
 
         // 1. If currently checking auth, stay on Splash
         if (authState.isLoading || isSplashScreen) return null;
@@ -90,6 +97,10 @@ class SocialApp extends ConsumerWidget {
           path: '/register',
           builder: (context, state) => const RegisterScreen(),
         ),
+        GoRoute(
+          path: '/forgot-password',
+          builder: (context, state) => const ForgotPasswordScreen(),
+        ),
         GoRoute(path: '/home', builder: (context, state) => const MainScreen()),
         GoRoute(
           path: '/activity',
@@ -104,6 +115,20 @@ class SocialApp extends ConsumerWidget {
           builder: (context, state) {
             final id = state.pathParameters['id']!;
             return PostDetailScreen(postId: id);
+          },
+        ),
+        GoRoute(
+          path: '/post/:id/edit',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return EditPostScreen(postId: id);
+          },
+        ),
+        GoRoute(
+          path: '/post/:id/comments',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return PostCommentsScreen(postId: id);
           },
         ),
         GoRoute(
@@ -158,6 +183,21 @@ class SocialApp extends ConsumerWidget {
         GoRoute(
           path: '/chats',
           builder: (context, state) => const ChatsListScreen(),
+        ),
+        GoRoute(
+          path: '/create-reel',
+          builder: (context, state) => const CreateReelScreen(),
+        ),
+        GoRoute(
+          path: '/live/create',
+          builder: (context, state) => const LiveStreamScreen(),
+        ),
+        GoRoute(
+          path: '/live/view/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return LiveViewerScreen(streamId: id);
+          },
         ),
         GoRoute(
           path: '/create-group',

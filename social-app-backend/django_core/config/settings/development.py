@@ -6,7 +6,7 @@ from .base import *
 # Development specific settings
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '192.168.43.227', '10.194.199.167', '10.63.172.167']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '192.168.43.227', '10.194.199.167', '10.129.254.167']
 
 # Database - Using SQLite for local development
 DATABASES = {

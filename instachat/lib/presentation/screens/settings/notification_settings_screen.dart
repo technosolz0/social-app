@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/constants/theme_constants.dart';
 
 class NotificationSettingsScreen extends ConsumerWidget {
@@ -165,10 +166,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
             subtitle: const Text('Customize notification preferences'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              // TODO: Navigate to advanced notification settings
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Advanced settings coming soon')),
-              );
+              context.go('/advanced-notification-settings');
             },
           ),
         ],
@@ -238,46 +236,63 @@ class NotificationSettingsScreen extends ConsumerWidget {
   }
 
   void _showQuietHoursDialog(BuildContext context) {
+    TimeOfDay startTime = const TimeOfDay(hour: 22, minute: 0); // 10:00 PM
+    TimeOfDay endTime = const TimeOfDay(hour: 8, minute: 0);   // 8:00 AM
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Quiet Hours'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Start Time'),
-              subtitle: const Text('10:00 PM'),
-              trailing: const Icon(Icons.access_time),
-              onTap: () {
-                // TODO: Show time picker
-              },
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Quiet Hours'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('Start Time'),
+                subtitle: Text(startTime.format(context)),
+                trailing: const Icon(Icons.access_time),
+                onTap: () async {
+                  final picked = await showTimePicker(
+                    context: context,
+                    initialTime: startTime,
+                  );
+                  if (picked != null) {
+                    setState(() => startTime = picked);
+                  }
+                },
+              ),
+              ListTile(
+                title: const Text('End Time'),
+                subtitle: Text(endTime.format(context)),
+                trailing: const Icon(Icons.access_time),
+                onTap: () async {
+                  final picked = await showTimePicker(
+                    context: context,
+                    initialTime: endTime,
+                  );
+                  if (picked != null) {
+                    setState(() => endTime = picked);
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
             ),
-            ListTile(
-              title: const Text('End Time'),
-              subtitle: const Text('8:00 AM'),
-              trailing: const Icon(Icons.access_time),
-              onTap: () {
-                // TODO: Show time picker
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Quiet hours set: ${startTime.format(context)} - ${endTime.format(context)}')),
+                );
               },
+              child: const Text('Save'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Quiet hours updated')),
-              );
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }

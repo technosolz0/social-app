@@ -9,7 +9,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img_lib;
 
 import '../../../core/constants/app_constants.dart';
-import '../../widgets/camera/face_filter_overlay.dart';
+import '../../../core/constants/theme_constants.dart';
+import '../../providers/post_provider.dart';
 
 // ============================================
 // lib/presentation/screens/camera/camera_screen.dart
@@ -74,12 +75,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
             child: CameraPreview(_cameraController!),
           ),
 
-          // AR Face Filters (if detected)
-          Positioned.fill(
-            child: FaceFilterOverlay(
-              filter: _selectedFilter,
-            ),
-          ),
+          // AR Face Filters would go here (placeholder for now)
 
           // Top Controls
           Positioned(

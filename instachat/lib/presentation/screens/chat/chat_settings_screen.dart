@@ -65,14 +65,26 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Details')),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: const Text('Details'),
+        ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_errorMessage != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Details')),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: const Text('Details'),
+        ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -106,6 +118,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: const Text('Details'),
         actions: [
           if (isGroupChat)
@@ -185,6 +201,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           ListTile(
             leading: const Icon(Icons.timer_outlined),
             title: const Text('Disappearing Messages'),
+            subtitle: const Text('Messages will disappear after being read'),
             trailing: Text(
               _disappearingMessages != null
                   ? '${_disappearingMessages!.inHours}h'
@@ -406,13 +423,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                 hintText: 'Search messages...',
                 prefixIcon: Icon(Icons.search),
               ),
-              onSubmitted: (query) {
+              onSubmitted: (query) async {
                 Navigator.pop(context);
                 if (query.trim().isNotEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Searching for: "$query"')),
-                  );
-                  // TODO: Implement actual search functionality
+                  await _performSearch(context, query.trim());
                 }
               },
             ),
@@ -429,14 +443,11 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               final query = searchController.text.trim();
               Navigator.pop(context);
               if (query.isNotEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Searching for: "$query"')),
-                );
-                // TODO: Implement actual search functionality
+                await _performSearch(context, query);
               }
             },
             child: const Text('Search'),
@@ -444,6 +455,39 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _performSearch(BuildContext context, String query) async {
+    try {
+      final apiService = ApiService();
+      final searchResults = await apiService.searchConversationMessages(
+        widget.conversationId,
+        query,
+      );
+
+      if (mounted) {
+        if (searchResults.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No messages found for "$query"')),
+          );
+        } else {
+          // Navigate to search results screen with the results
+          if (mounted) {
+            context.push('/chat-search-results', extra: {
+              'conversationId': widget.conversationId,
+              'query': query,
+              'results': searchResults,
+            });
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Search failed: $e')),
+        );
+      }
+    }
   }
 
   void _showWallpaperOptions(BuildContext context) {

@@ -199,6 +199,26 @@ class ApiService {
     return UserModel.fromJson(response.data);
   }
 
+  Future<Map<String, dynamic>> requestPasswordReset(String email) async {
+    final response = await _dio.post(
+      ApiConstants.passwordReset,
+      data: {'email': email},
+    );
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> confirmPasswordReset(
+    String uid,
+    String token,
+    String newPassword,
+  ) async {
+    final response = await _dio.post(
+      ApiConstants.passwordResetConfirm,
+      data: {'uid': uid, 'token': token, 'new_password': newPassword},
+    );
+    return response.data;
+  }
+
   // ===========================================================================
   // USER METHODS
   // ===========================================================================
@@ -218,11 +238,11 @@ class ApiService {
   }
 
   Future<void> followUser(String userId) async {
-    await _dio.post(ApiConstants.followUser(userId));
+    await _dio.post(ApiConstants.followUser, data: {'user_id': userId});
   }
 
   Future<void> unfollowUser(String userId) async {
-    await _dio.post(ApiConstants.unfollowUser(userId));
+    await _dio.post(ApiConstants.unfollowUser, data: {'user_id': userId});
   }
 
   Future<List<UserModel>> getUserFollowers(
@@ -255,7 +275,31 @@ class ApiService {
 
   Future<List<PostModel>> getFeed({int page = 1, int limit = 20}) async {
     final response = await _dio.get(
-      ApiConstants.posts,
+      ApiConstants.feed,
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    final List<dynamic> data = response.data['results'] ?? response.data;
+    return data.map((json) => PostModel.fromJson(json)).toList();
+  }
+
+  Future<List<PostModel>> getTrendingPosts({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final response = await _dio.get(
+      ApiConstants.trending,
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    final List<dynamic> data = response.data['results'] ?? response.data;
+    return data.map((json) => PostModel.fromJson(json)).toList();
+  }
+
+  Future<List<PostModel>> getExplorePosts({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final response = await _dio.get(
+      ApiConstants.explore,
       queryParameters: {'page': page, 'limit': limit},
     );
     final List<dynamic> data = response.data['results'] ?? response.data;
@@ -304,6 +348,89 @@ class ApiService {
 
   Future<void> deletePost(String postId) async {
     await _dio.delete(ApiConstants.postById(postId));
+  }
+
+  Future<Map<String, dynamic>> sharePost(String postId) async {
+    final response = await _dio.post(ApiConstants.sharePost(postId));
+    return response.data;
+  }
+
+  Future<List<Map<String, dynamic>>> getPostCommentsList(
+    String postId, {
+    int page = 1,
+  }) async {
+    final response = await _dio.get(
+      ApiConstants.postComments(postId),
+      queryParameters: {'page': page},
+    );
+    return List<Map<String, dynamic>>.from(
+      response.data['results'] ?? response.data,
+    );
+  }
+
+  Future<Map<String, dynamic>> addPostComment(
+    String postId,
+    String text, {
+    String? parentId,
+  }) async {
+    final response = await _dio.post(
+      ApiConstants.addComment(postId),
+      data: {'text': text, if (parentId != null) 'parent_id': parentId},
+    );
+    return response.data;
+  }
+
+  // ===========================================================================
+  // STORY METHODS
+  // ===========================================================================
+
+  Future<List<Map<String, dynamic>>> getStories({int page = 1}) async {
+    final response = await _dio.get(
+      ApiConstants.stories,
+      queryParameters: {'page': page},
+    );
+    return List<Map<String, dynamic>>.from(
+      response.data['results'] ?? response.data,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getMyStories() async {
+    final response = await _dio.get(ApiConstants.myStories);
+    return List<Map<String, dynamic>>.from(
+      response.data['results'] ?? response.data,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getStoryHighlights() async {
+    final response = await _dio.get(ApiConstants.storyHighlights);
+    return List<Map<String, dynamic>>.from(
+      response.data['results'] ?? response.data,
+    );
+  }
+
+  Future<Map<String, dynamic>> createStory({
+    required String mediaUrl,
+    required String mediaType,
+    int duration = 15,
+  }) async {
+    final response = await _dio.post(
+      ApiConstants.stories,
+      data: {
+        'media_url': mediaUrl,
+        'media_type': mediaType,
+        'duration': duration,
+      },
+    );
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> viewStory(String storyId) async {
+    final response = await _dio.post(ApiConstants.viewStory(storyId));
+    return response.data;
+  }
+
+  Future<void> deleteStory(String storyId) async {
+    await _dio.delete(ApiConstants.storyById(storyId));
   }
 
   // ===========================================================================
@@ -364,6 +491,23 @@ class ApiService {
     final response = await _dio.get(
       ApiConstants.conversationMessages(conversationId),
       queryParameters: {'page': page},
+    );
+    final List<dynamic> data = response.data['results'] ?? response.data;
+    return data.map((json) => MessageModel.fromJson(json)).toList();
+  }
+
+  Future<List<MessageModel>> searchConversationMessages(
+    String conversationId,
+    String query, {
+    int page = 1,
+  }) async {
+    final response = await _dio.get(
+      '${ApiConstants.apiBaseUrl}/chat/messages/search/',
+      queryParameters: {
+        'conversation_id': conversationId,
+        'q': query,
+        'page': page,
+      },
     );
     final List<dynamic> data = response.data['results'] ?? response.data;
     return data.map((json) => MessageModel.fromJson(json)).toList();
@@ -445,7 +589,7 @@ class ApiService {
   // NOTIFICATION METHODS
   // ===========================================================================
 
-  Future<List<NotificationModel>> getNotifications({int page = 1}) async {
+  Future<List<NotificationModel>> getNotificationsList({int page = 1}) async {
     final response = await _dio.get(
       ApiConstants.notifications,
       queryParameters: {'page': page},
@@ -619,6 +763,92 @@ class ApiService {
     final response = await _dio.get(
       ApiConstants.hashtagRecommendations,
       queryParameters: {'limit': limit},
+    );
+    return response.data;
+  }
+
+  // ===========================================================================
+  // NOTIFICATION METHODS
+  // ===========================================================================
+
+  Future<List<Map<String, dynamic>>> getNotifications({int page = 1}) async {
+    final response = await _dio.get(
+      ApiConstants.notifications,
+      queryParameters: {'page': page},
+    );
+    return List<Map<String, dynamic>>.from(
+      response.data['results'] ?? response.data,
+    );
+  }
+
+  Future<Map<String, dynamic>> getUnreadCount() async {
+    final response = await _dio.get(ApiConstants.unreadCount);
+    return response.data;
+  }
+
+  Future<void> markNotificationRead(String notificationId) async {
+    await _dio.post(ApiConstants.markNotificationRead(notificationId));
+  }
+
+  Future<void> markAllNotificationsRead() async {
+    await _dio.post(ApiConstants.markAllRead);
+  }
+
+  Future<void> clearAllNotifications() async {
+    await _dio.delete(ApiConstants.clearAll);
+  }
+
+  Future<void> registerPushToken({
+    required String token,
+    required String deviceType,
+    String? deviceId,
+    String? appVersion,
+    String? osVersion,
+  }) async {
+    await _dio.post(
+      ApiConstants.pushTokens + 'register/',
+      data: {
+        'token': token,
+        'device_type': deviceType,
+        'device_id': deviceId,
+        'app_version': appVersion,
+        'os_version': osVersion,
+      },
+    );
+  }
+
+  Future<void> unregisterPushToken({String? deviceId}) async {
+    final data = deviceId != null ? {'device_id': deviceId} : {};
+    await _dio.post(ApiConstants.pushTokens + 'unregister/', data: data);
+  }
+
+  Future<Map<String, dynamic>> getNotificationPreferences() async {
+    final response = await _dio.get(ApiConstants.notificationPreferences);
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> updateNotificationPreferences(
+    Map<String, dynamic> preferences,
+  ) async {
+    final response = await _dio.post(
+      ApiConstants.notificationPreferences + 'update_preferences/',
+      data: preferences,
+    );
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> updateQuietHours({
+    required bool enabled,
+    String? startTime,
+    String? endTime,
+  }) async {
+    final response = await _dio.post(
+      ApiConstants.notificationPreferences + 'update_quiet_hours/',
+      data: {
+        'quiet_hours_enabled': enabled,
+        'quiet_hours_start': startTime,
+        'quiet_hours_end': endTime,
+      },
     );
     return response.data;
   }

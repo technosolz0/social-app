@@ -15,7 +15,6 @@ class ChatsListScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
-
   @override
   Widget build(BuildContext context) {
     final conversationsAsync = ref.watch(conversationsProvider);
@@ -52,11 +51,7 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            size: 80,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey[400]),
           const SizedBox(height: AppSizes.paddingLarge),
           Text(
             'No messages yet',
@@ -69,16 +64,11 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
           const SizedBox(height: AppSizes.paddingMedium),
           Text(
             'Start a conversation with someone',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[500]),
           ),
           const SizedBox(height: AppSizes.paddingLarge),
           ElevatedButton.icon(
-            onPressed: () {
-              // TODO: Implement user picker
-            },
+            onPressed: () => _showUserPicker(context),
             icon: const Icon(Icons.add),
             label: const Text('Start Chat'),
           ),
@@ -99,7 +89,9 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
 
   Widget _buildConversationItem(ConversationModel conversation) {
     final currentUser = ref.read(authNotifierProvider).user;
-    final otherParticipants = conversation.participants.where((p) => p.id != currentUser?.id).toList();
+    final otherParticipants = conversation.participants
+        .where((p) => p.id != currentUser?.id)
+        .toList();
 
     // For direct messages, show the other participant
     // For group chats, show group name
@@ -111,7 +103,9 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
       displayName = conversation.name ?? 'Group Chat';
       avatar = null; // Group avatar
     } else {
-      final participant = otherParticipants.isNotEmpty ? otherParticipants[0] : conversation.participants[0];
+      final participant = otherParticipants.isNotEmpty
+          ? otherParticipants[0]
+          : conversation.participants[0];
       displayName = participant.username;
       avatar = participant.avatar;
       isOnline = true; // Mock online for demo
@@ -156,10 +150,7 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
           Expanded(
             child: Text(
               displayName,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 16,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -167,11 +158,10 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
           const SizedBox(width: 8),
           if (conversation.lastMessage != null)
             Text(
-              timeago.format(DateTime.parse(conversation.lastMessage!['created_at'] ?? '')),
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[500],
+              timeago.format(
+                DateTime.parse(conversation.lastMessage!['created_at'] ?? ''),
               ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             ),
         ],
       ),
@@ -184,8 +174,12 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
                 conversation.lastMessage?['content'] ?? 'No messages yet',
                 style: TextStyle(
                   fontSize: 14,
-                  color: (conversation.unreadCount ?? 0) > 0 ? Colors.black : Colors.grey[600],
-                  fontWeight: (conversation.unreadCount ?? 0) > 0 ? FontWeight.w500 : FontWeight.normal,
+                  color: (conversation.unreadCount ?? 0) > 0
+                      ? Colors.black
+                      : Colors.grey[600],
+                  fontWeight: (conversation.unreadCount ?? 0) > 0
+                      ? FontWeight.w500
+                      : FontWeight.normal,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -222,7 +216,10 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
     );
   }
 
-  void _showConversationOptions(BuildContext context, ConversationModel conversation) {
+  void _showConversationOptions(
+    BuildContext context,
+    ConversationModel conversation,
+  ) {
     showModalBottomSheet(
       context: context,
       builder: (context) => Column(
@@ -257,9 +254,9 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
             ),
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('User blocked')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('User blocked')));
             },
           ),
         ],
@@ -267,7 +264,10 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, ConversationModel conversation) {
+  void _showDeleteConfirmation(
+    BuildContext context,
+    ConversationModel conversation,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -286,23 +286,116 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
               final success = await ref
                   .read(conversationsProvider.notifier)
                   .deleteConversation(conversation.id);
-              
+
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(success 
-                        ? 'Conversation deleted' 
-                        : 'Failed to delete conversation'),
+                    content: Text(
+                      success
+                          ? 'Conversation deleted'
+                          : 'Failed to delete conversation',
+                    ),
                   ),
                 );
               }
             },
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showUserPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(AppSizes.paddingMedium),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey[300]!, width: 0.5),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Text(
+                    'Start New Chat',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.all(AppSizes.paddingMedium),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search users...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppSizes.borderRadiusMedium,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                ),
+                onChanged: (query) {
+                  // TODO: Implement search functionality
+                },
+              ),
+            ),
+
+            // User list
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                itemCount: 10, // Mock data
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.grey[300],
+                      child: Text(
+                        'U${index + 1}',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    title: Text('User ${index + 1}'),
+                    subtitle: Text('Last seen ${index + 1} hours ago'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      // Navigate to chat with selected user
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Starting chat with User ${index + 1}'),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

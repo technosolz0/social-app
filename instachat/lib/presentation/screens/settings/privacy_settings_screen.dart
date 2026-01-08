@@ -9,9 +9,7 @@ class PrivacySettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Privacy Settings'),
-      ),
+      appBar: AppBar(title: const Text('Privacy Settings')),
       body: ListView(
         children: [
           // Account Privacy Section
@@ -23,7 +21,11 @@ class PrivacySettingsScreen extends ConsumerWidget {
             onChanged: (value) {
               // Update privacy setting
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Private account ${value ? 'enabled' : 'disabled'}')),
+                SnackBar(
+                  content: Text(
+                    'Private account ${value ? 'enabled' : 'disabled'}',
+                  ),
+                ),
               );
             },
           ),
@@ -85,10 +87,7 @@ class PrivacySettingsScreen extends ConsumerWidget {
             subtitle: const Text('Accounts with limited interactions'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              // TODO: Navigate to restricted users
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Restricted users coming soon')),
-              );
+              _showRestrictedUsersScreen(context);
             },
           ),
 
@@ -143,10 +142,7 @@ class PrivacySettingsScreen extends ConsumerWidget {
             title: const Text('Privacy Policy'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              // TODO: Open privacy policy
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Privacy policy coming soon')),
-              );
+              _showPrivacyPolicy(context);
             },
           ),
           ListTile(
@@ -154,10 +150,7 @@ class PrivacySettingsScreen extends ConsumerWidget {
             title: const Text('Terms of Service'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              // TODO: Open terms of service
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Terms of service coming soon')),
-              );
+              _showTermsOfService(context);
             },
           ),
         ],
@@ -167,7 +160,12 @@ class PrivacySettingsScreen extends ConsumerWidget {
 
   Widget _buildSectionHeader(String title) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(AppSizes.paddingMedium, AppSizes.paddingLarge, AppSizes.paddingMedium, AppSizes.paddingSmall),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.paddingMedium,
+        AppSizes.paddingLarge,
+        AppSizes.paddingMedium,
+        AppSizes.paddingSmall,
+      ),
       child: Text(
         title,
         style: const TextStyle(
@@ -198,7 +196,9 @@ class PrivacySettingsScreen extends ConsumerWidget {
             onPressed: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Story privacy set to: Followers')),
+                const SnackBar(
+                  content: Text('Story privacy set to: Followers'),
+                ),
               );
             },
             child: const Text('Followers'),
@@ -207,10 +207,100 @@ class PrivacySettingsScreen extends ConsumerWidget {
             onPressed: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Story privacy set to: Close Friends')),
+                const SnackBar(
+                  content: Text('Story privacy set to: Close Friends'),
+                ),
               );
             },
             child: const Text('Close Friends'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRestrictedUsersScreen(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Restricted Accounts'),
+        content: const Text(
+          'Restricted accounts can still see your posts, but their comments and messages will be hidden from you. '
+          'They won\'t know they\'ve been restricted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Restricted users management coming soon'),
+                ),
+              );
+            },
+            child: const Text('Manage'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPrivacyPolicy(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Privacy Policy'),
+        content: const SingleChildScrollView(
+          child: Text(
+            'Privacy Policy\n\n'
+            'We collect information you provide directly to us, such as when you create an account, '
+            'post content, or contact us for support. We also collect information about your use of our services, '
+            'including your interactions with content and other users.\n\n'
+            'We use this information to provide, maintain, and improve our services, communicate with you, '
+            'and protect our users.\n\n'
+            'We may share your information with third-party service providers who assist us in operating our platform, '
+            'or when required by law.\n\n'
+            'You have the right to access, update, or delete your personal information. '
+            'Contact us at privacy@socialapp.com for any privacy-related inquiries.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTermsOfService(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Terms of Service'),
+        content: const SingleChildScrollView(
+          child: Text(
+            'Terms of Service\n\n'
+            'By using our social media platform, you agree to these terms.\n\n'
+            '1. You must be at least 13 years old to use our services.\n\n'
+            '2. You are responsible for maintaining the confidentiality of your account credentials.\n\n'
+            '3. You agree not to post harmful, offensive, or illegal content.\n\n'
+            '4. We reserve the right to remove content that violates our community guidelines.\n\n'
+            '5. We may suspend or terminate accounts that violate these terms.\n\n'
+            '6. Our services are provided "as is" without warranties.\n\n'
+            '7. We are not liable for any damages arising from your use of our services.\n\n'
+            'These terms may be updated periodically. Continued use of our services constitutes acceptance of updated terms.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
           ),
         ],
       ),

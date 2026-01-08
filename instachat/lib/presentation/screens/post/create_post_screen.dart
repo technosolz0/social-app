@@ -73,13 +73,16 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       }
 
       if (mediaUrl != null) {
+        // Extract hashtags from caption
+        final hashtags = _extractHashtags(_captionController.text.trim());
+
         // Create post using provider
         final postProvider = ref.read(postFeedNotifierProvider.notifier);
         final newPost = await postProvider.createPost(
           postType: _postType,
           mediaUrl: mediaUrl,
           caption: _captionController.text.trim(),
-          hashtags: [], // TODO: Extract hashtags from caption
+          hashtags: hashtags,
         );
 
         if (newPost != null) {
@@ -105,10 +108,23 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     }
   }
 
+  List<String> _extractHashtags(String text) {
+    // Regular expression to match hashtags (words starting with #)
+    final hashtagRegex = RegExp(r'#(\w+)');
+    final matches = hashtagRegex.allMatches(text);
+
+    // Extract hashtag text without the # symbol
+    return matches.map((match) => match.group(1)!).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: const Text('Create Post'),
         actions: [
           TextButton(

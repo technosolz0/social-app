@@ -216,6 +216,32 @@ class AuthRepository {
     _apiService.setAuthToken(token);
   }
 
+  Future<Map<String, dynamic>> requestPasswordReset(String email) async {
+    try {
+      return await _apiService.requestPasswordReset(email);
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Password reset request failed: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> confirmPasswordReset(
+    String uid,
+    String token,
+    String newPassword,
+  ) async {
+    try {
+      return await _apiService.confirmPasswordReset(uid, token, newPassword);
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Password reset confirmation failed: $e');
+      }
+      rethrow;
+    }
+  }
+
   Future<void> clearStoredTokens() async {
     await _localStorage.clearSecureData();
     _apiService.clearAuthToken();

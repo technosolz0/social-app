@@ -556,13 +556,108 @@ class _CommentItemState extends State<CommentItem>
               title: const Text('Report'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implement report
+                _showReportDialog(context);
               },
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _showReportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Report Comment'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Why are you reporting this comment?'),
+            const SizedBox(height: 16),
+            RadioListTile<String>(
+              title: const Text('Spam'),
+              value: 'spam',
+              groupValue: null,
+              onChanged: (value) {
+                Navigator.pop(context);
+                _submitReport('spam');
+              },
+            ),
+            RadioListTile<String>(
+              title: const Text('Harassment'),
+              value: 'harassment',
+              groupValue: null,
+              onChanged: (value) {
+                Navigator.pop(context);
+                _submitReport('harassment');
+              },
+            ),
+            RadioListTile<String>(
+              title: const Text('Inappropriate content'),
+              value: 'inappropriate',
+              groupValue: null,
+              onChanged: (value) {
+                Navigator.pop(context);
+                _submitReport('inappropriate');
+              },
+            ),
+            RadioListTile<String>(
+              title: const Text('Hate speech'),
+              value: 'hate_speech',
+              groupValue: null,
+              onChanged: (value) {
+                Navigator.pop(context);
+                _submitReport('hate_speech');
+              },
+            ),
+            RadioListTile<String>(
+              title: const Text('Other'),
+              value: 'other',
+              groupValue: null,
+              onChanged: (value) {
+                Navigator.pop(context);
+                _submitReport('other');
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _submitReport(String reason) async {
+    try {
+      final apiService = ApiService();
+      await apiService.customRequest(
+        method: 'POST',
+        path: '/reports/',
+        data: {
+          'content_type': 'comment',
+          'content_id': widget.comment.id,
+          'reason': reason,
+          'description': 'Reported from comment options',
+        },
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Comment reported successfully')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to report comment: $e')),
+        );
+      }
+    }
   }
 
   @override

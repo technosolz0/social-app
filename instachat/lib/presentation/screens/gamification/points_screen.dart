@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/constants/theme_constants.dart';
 import '../../providers/gamification_provider.dart';
 
@@ -12,6 +13,10 @@ class PointsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: const Text('Points & Level'),
         actions: [
           IconButton(
@@ -562,15 +567,34 @@ class PointsScreen extends ConsumerWidget {
     );
   }
 
-  void _shareProgress(BuildContext context, gamification) {
-    // In a real app, this would open a share dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Shared: I\'m Level ${gamification.currentLevel} with ${gamification.totalPoints} points! 🎉',
-        ),
-      ),
-    );
+  void _shareProgress(BuildContext context, gamification) async {
+    final shareText = '''
+🎉 Check out my progress on Social App!
+
+🏆 Level: ${gamification.currentLevel}
+⭐ Total Points: ${gamification.totalPoints}
+🔥 Current Streak: ${gamification.currentStreak} days
+
+Join me and start earning points too! Download Social App now.
+#SocialApp #Gamification #LevelUp
+    '''.trim();
+
+    try {
+      await Share.share(
+        shareText,
+        subject: 'My Social App Progress',
+      );
+    } catch (e) {
+      // Fallback to snackbar if sharing fails
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to share: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _showPointsInfo(BuildContext context) {

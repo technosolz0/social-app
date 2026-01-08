@@ -146,6 +146,35 @@ class AuthNotifier extends _$AuthNotifier {
     }
   }
 
+  // 🔑 PASSWORD RESET METHOD
+  Future<void> requestPasswordReset(String email) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+
+    try {
+      await _authRepository.requestPasswordReset(email);
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      rethrow;
+    }
+  }
+
+  Future<void> confirmPasswordReset(
+    String uid,
+    String token,
+    String newPassword,
+  ) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+
+    try {
+      await _authRepository.confirmPasswordReset(uid, token, newPassword);
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      rethrow;
+    }
+  }
+
   // Private helper methods
   Future<void> _checkAuthStatus() async {
     try {

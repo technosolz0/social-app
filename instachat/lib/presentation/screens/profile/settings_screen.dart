@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/theme_constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/settings_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -11,6 +12,10 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: const Text('Settings'),
       ),
       body: ListView(
@@ -84,23 +89,53 @@ class SettingsScreen extends ConsumerWidget {
 
           const Divider(),
 
+          // Content & Display Section
+          _buildSectionHeader('Content & Display'),
+          _buildSwitchTile(
+            context,
+            icon: Icons.play_circle_outline,
+            title: 'Auto-scroll Reels',
+            subtitle: 'Automatically play next reel when current one ends',
+            value: ref.watch(settingsProvider).autoScrollReels,
+            onChanged: (value) => ref.read(settingsProvider.notifier).setAutoScrollReels(value),
+          ),
+          _buildListTile(
+            context,
+            icon: Icons.live_tv,
+            title: 'Live Streaming',
+            subtitle: 'Go live and stream to your followers',
+            onTap: () => context.push('/live-streaming'),
+          ),
+
+          const Divider(),
+
           // Preferences Section
           _buildSectionHeader('Preferences'),
           _buildSwitchTile(
             context,
             icon: Icons.dark_mode,
             title: 'Dark Mode',
-            value: false, // This would come from a theme provider
-            onChanged: (value) {
-              // Toggle theme
-            },
+            value: ref.watch(settingsProvider).isDarkMode,
+            onChanged: (value) => ref.read(settingsProvider.notifier).setDarkMode(value),
           ),
           _buildListTile(
             context,
             icon: Icons.language,
             title: 'Language',
-            subtitle: 'English',
+            subtitle: ref.watch(settingsProvider).language == 'en' ? 'English' : 'Other',
             onTap: () => _showLanguageDialog(context),
+          ),
+          _buildListTile(
+            context,
+            icon: Icons.notifications,
+            title: 'Notifications',
+            onTap: () => context.push('/notification-settings'),
+          ),
+          _buildListTile(
+            context,
+            icon: Icons.privacy_tip,
+            title: 'Privacy & Safety',
+            onTap: () => context.push('/privacy-settings'),
           ),
 
           const Divider(),
@@ -159,12 +194,14 @@ class SettingsScreen extends ConsumerWidget {
     BuildContext context, {
     required IconData icon,
     required String title,
+    String? subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
     return SwitchListTile(
       secondary: Icon(icon),
       title: Text(title),
+      subtitle: subtitle != null ? Text(subtitle) : null,
       value: value,
       onChanged: onChanged,
     );

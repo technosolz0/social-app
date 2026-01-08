@@ -6,6 +6,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/theme_constants.dart';
 import '../../../data/models/post_model.dart';
 import '../../providers/reels_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../widgets/post/comment_bottom_sheet.dart';
 
 class ReelsScreen extends ConsumerStatefulWidget {
@@ -71,6 +72,17 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
 
     try {
       await controller.initialize();
+
+      // Add listener for video completion to enable auto-scroll
+      controller.addListener(() {
+        final settings = ref.read(settingsProvider);
+        if (controller.value.position >= controller.value.duration &&
+            settings.autoScrollReels &&
+            mounted) {
+          _autoScrollToNextReel();
+        }
+      });
+
       final reels = ref.read(reelsProvider).value ?? [];
       if (_currentPage == reels.indexOf(reel)) {
         controller.play();
@@ -80,6 +92,27 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
     } catch (e) {
       print('Error initializing video: $e');
     }
+  }
+
+  void _autoScrollToNextReel() {
+    final reelsAsync = ref.read(reelsProvider);
+    reelsAsync.whenData((reels) {
+      if (_currentPage < reels.length - 1) {
+        // Scroll to next reel
+        _pageController.animateToPage(
+          _currentPage + 1,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        // Loop back to first reel
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _disposeAllControllers() {

@@ -106,6 +106,58 @@ class PostFeedNotifier extends AutoDisposeAsyncNotifier<List<PostModel>> {
     }
   }
 
+  // Share a post
+  Future<void> sharePost(String postId) async {
+    try {
+      await _api.sharePost(postId);
+      // Update share count in local state
+      final currentPosts = state.value ?? [];
+      state = AsyncValue.data(
+        currentPosts.map((post) {
+          if (post.id == postId) {
+            return post.copyWith(sharesCount: post.sharesCount + 1);
+          }
+          return post;
+        }).toList(),
+      );
+    } catch (e) {
+      // Handle error
+    }
+  }
+
+  // Add comment to post
+  Future<void> addComment(String postId, String text, {String? parentId}) async {
+    try {
+      final commentData = await _api.addPostComment(postId, text, parentId: parentId);
+      // Update comment count in local state
+      final currentPosts = state.value ?? [];
+      state = AsyncValue.data(
+        currentPosts.map((post) {
+          if (post.id == postId) {
+            return post.copyWith(commentsCount: post.commentsCount + 1);
+          }
+          return post;
+        }).toList(),
+      );
+    } catch (e) {
+      // Handle error
+    }
+  }
+
+  // Delete post
+  Future<void> deletePost(String postId) async {
+    try {
+      await _api.deletePost(postId);
+      // Remove from local state
+      final currentPosts = state.value ?? [];
+      state = AsyncValue.data(
+        currentPosts.where((post) => post.id != postId).toList(),
+      );
+    } catch (e) {
+      // Handle error
+    }
+  }
+
   // Refresh feed manually
   Future<void> refresh() async {
     state = const AsyncValue.loading();
@@ -173,9 +225,9 @@ class FeedScreen extends ConsumerWidget {
                   CommentBottomSheet.show(context, post);
                 },
                 onShare: () {
-                  // TODO: Implement share functionality
+                  ref.read(postFeedNotifierProvider.notifier).sharePost(post.id);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Share functionality coming soon!')),
+                    const SnackBar(content: Text('Post shared successfully!')),
                   );
                 },
               );

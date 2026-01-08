@@ -185,7 +185,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             IconButton(
               icon: const Icon(Icons.chevron_right, size: 20),
               onPressed: () {
-                // TODO: Navigate to related content
+                _navigateToRelatedContent(activity);
               },
             ),
         ],
@@ -373,5 +373,46 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
     // Navigate to settings screen with activity tab
     context.push('/settings', extra: {'tab': 'activity'});
+  }
+
+  void _navigateToRelatedContent(dynamic activity) {
+    switch (activity.activityType) {
+      case 'post_view':
+      case 'post_like':
+      case 'comment':
+      case 'share':
+        if (activity.metadata?['postId'] != null) {
+          // Navigate to the specific post
+          context.push('/post/${activity.metadata['postId']}');
+        }
+        break;
+
+      case 'story_view':
+        if (activity.metadata?['storyId'] != null) {
+          // Navigate to the specific story
+          context.push('/story/${activity.metadata['storyId']}');
+        }
+        break;
+
+      case 'profile_view':
+        if (activity.metadata?['userId'] != null) {
+          // Navigate to the specific profile
+          context.push('/profile/${activity.metadata['userId']}');
+        }
+        break;
+
+      case 'search':
+        if (activity.metadata?['query'] != null) {
+          // Navigate to search results with the same query
+          context.push('/search', extra: {'query': activity.metadata['query']});
+        }
+        break;
+
+      default:
+        // For other activity types, just show a snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No related content available for ${activity.activityType}')),
+        );
+    }
   }
 }
