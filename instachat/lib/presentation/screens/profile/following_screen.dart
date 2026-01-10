@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/constants/theme_constants.dart';
 
 // Provider for following (mock data for now)
 final followingProvider = StateProvider<List<Map<String, dynamic>>>((ref) {
-  return List.generate(12, (index) => {
-    'id': 'following_$index',
-    'username': 'following_$index',
-    'avatar': 'https://picsum.photos/100/100?random=${index + 50}',
-    'isVerified': index % 4 == 0, // Some are verified
-  });
+  return List.generate(
+    12,
+    (index) => {
+      'id': 'following_$index',
+      'username': 'following_$index',
+      'avatar': 'https://picsum.photos/100/100?random=${index + 50}',
+      'isVerified': index % 4 == 0, // Some are verified
+    },
+  );
 });
 
 class FollowingScreen extends ConsumerWidget {
@@ -39,7 +41,11 @@ class FollowingScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFollowingItem(BuildContext context, Map<String, dynamic> user, WidgetRef ref) {
+  Widget _buildFollowingItem(
+    BuildContext context,
+    Map<String, dynamic> user,
+    WidgetRef ref,
+  ) {
     return FollowingItem(
       user: user,
       onUnfollow: () {
@@ -137,11 +143,7 @@ class _FollowingItemState extends State<FollowingItem>
               if (widget.user['isVerified'])
                 const Padding(
                   padding: EdgeInsets.only(left: 4),
-                  child: Icon(
-                    Icons.verified,
-                    color: Colors.blue,
-                    size: 16,
-                  ),
+                  child: Icon(Icons.verified, color: Colors.blue, size: 16),
                 ),
             ],
           ),
@@ -172,7 +174,7 @@ class _FollowingItemState extends State<FollowingItem>
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
                 child: const Icon(
                   Icons.heart_broken,
@@ -189,15 +191,16 @@ class _FollowingItemState extends State<FollowingItem>
             right: 120,
             top: 10,
             child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0),
-                end: const Offset(0, -1.5),
-              ).animate(
-                CurvedAnimation(
-                  parent: _pointsAnimationController,
-                  curve: Curves.easeOut,
-                ),
-              ),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 0),
+                    end: const Offset(0, -1.5),
+                  ).animate(
+                    CurvedAnimation(
+                      parent: _pointsAnimationController,
+                      curve: Curves.easeOut,
+                    ),
+                  ),
               child: FadeTransition(
                 opacity: Tween<double>(begin: 1.0, end: 0.0).animate(
                   CurvedAnimation(
@@ -206,7 +209,10 @@ class _FollowingItemState extends State<FollowingItem>
                   ),
                 ),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF757575), Color(0xFF9E9E9E)],
@@ -214,7 +220,7 @@ class _FollowingItemState extends State<FollowingItem>
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.4),
+                        color: Colors.grey.withValues(alpha: 0.4),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),

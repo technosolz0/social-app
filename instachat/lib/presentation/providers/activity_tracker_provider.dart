@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/utils/logger.dart';
 import '../../data/models/activity_model.dart';
 import '../../data/services/local_storage_service.dart';
 import '../../data/services/api_service.dart';
@@ -34,7 +36,7 @@ class ActivityTracker extends _$ActivityTracker {
       final activities = _storage.getRecentActivities(limit: 100);
       state = activities;
     } catch (e) {
-      print('Failed to load activities from storage: $e');
+      Logger.e('Failed to load activities from storage: $e');
     }
   }
 
@@ -112,7 +114,7 @@ class ActivityTracker extends _$ActivityTracker {
     try {
       await _storage.saveActivity(activity);
     } catch (e) {
-      print('Failed to save activity to storage: $e');
+      Logger.e('Failed to save activity to storage: $e');
     }
   }
 
@@ -125,7 +127,7 @@ class ActivityTracker extends _$ActivityTracker {
         data: activity.toJson(),
       );
     } catch (e) {
-      print('Failed to track activity: $e');
+      Logger.e('Failed to track activity: $e');
       // Could implement retry logic here
     }
   }
@@ -150,12 +152,12 @@ class ActivityTracker extends _$ActivityTracker {
 
       // Update sync timestamp
       await _storage.saveLastSyncTimestamp(DateTime.now());
-      print('Activities synced with server: ${unsyncedActivities.length}');
-      
+      Logger.i('Activities synced with server: ${unsyncedActivities.length}');
+
       // Optionally clear synced activities if they are only for tracking
-      // await _storage.clearAllActivities(); 
+      // await _storage.clearAllActivities();
     } catch (e) {
-      print('Failed to sync activities: $e');
+      Logger.e('Failed to sync activities: $e');
     }
   }
 
@@ -190,7 +192,7 @@ class ActivityTracker extends _$ActivityTracker {
       final moreActivities = _storage.getRecentActivities(limit: state.length + limit);
       state = moreActivities;
     } catch (e) {
-      print('Failed to load more activities: $e');
+      Logger.d('Failed to load more activities: $e');
     }
   }
 }

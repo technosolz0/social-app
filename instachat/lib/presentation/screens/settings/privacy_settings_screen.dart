@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/theme_constants.dart';
+import '../../widgets/common/custom_app_bar.dart';
 
 class PrivacySettingsScreen extends ConsumerWidget {
   const PrivacySettingsScreen({super.key});
@@ -9,7 +10,7 @@ class PrivacySettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Privacy Settings')),
+      appBar: SettingsAppBar(title: 'Privacy Settings'),
       body: ListView(
         children: [
           // Account Privacy Section

@@ -35,7 +35,8 @@ class SettingsScreen extends ConsumerWidget {
                 backgroundColor: Colors.transparent,
                 flexibleSpace: FlexibleSpaceBar(
                   title: ShaderMask(
-                    shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
+                    shaderCallback: (bounds) =>
+                        AppTheme.primaryGradient.createShader(bounds),
                     child: const Text(
                       'Settings',
                       style: TextStyle(
@@ -115,7 +116,10 @@ class SettingsScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildSectionHeader('Privacy & Security', Icons.security),
+                            _buildSectionHeader(
+                              'Privacy & Security',
+                              Icons.security,
+                            ),
                             const SizedBox(height: 8),
                             _buildModernListTile(
                               context,
@@ -142,7 +146,10 @@ class SettingsScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildSectionHeader('Notifications', Icons.notifications),
+                            _buildSectionHeader(
+                              'Notifications',
+                              Icons.notifications,
+                            ),
                             const SizedBox(height: 8),
                             _buildModernListTile(
                               context,
@@ -224,7 +231,7 @@ class SettingsScreen extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.withOpacity(0.3),
+                              color: Colors.red.withValues(alpha: 0.3),
                               blurRadius: 12,
                               offset: const Offset(0, 6),
                             ),
@@ -269,20 +276,26 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildModernCard(BuildContext context, {required Widget child, required Gradient gradient}) {
+  Widget _buildModernCard(
+    BuildContext context, {
+    required Widget child,
+    required Gradient gradient,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
           colors: isDark
               ? [const Color(0xFF1A1F3A), const Color(0xFF252B49)]
-              : [Colors.white, Colors.white.withOpacity(0.9)],
+              : [Colors.white, Colors.white.withValues(alpha: 0.9)],
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.05),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -294,13 +307,12 @@ class SettingsScreen extends ConsumerWidget {
             height: 4,
             decoration: BoxDecoration(
               gradient: gradient,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: child,
-          ),
+          Padding(padding: const EdgeInsets.all(16), child: child),
         ],
       ),
     );
@@ -312,7 +324,7 @@ class SettingsScreen extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 20, color: AppTheme.primaryColor),
@@ -320,10 +332,7 @@ class SettingsScreen extends ConsumerWidget {
         const SizedBox(width: 12),
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -369,7 +378,10 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: AppTheme.getSubtitleColor(context)),
+              Icon(
+                Icons.chevron_right,
+                color: AppTheme.getSubtitleColor(context),
+              ),
             ],
           ),
         ),
@@ -379,7 +391,7 @@ class SettingsScreen extends ConsumerWidget {
 
   Widget _buildThemeSelector(BuildContext context, WidgetRef ref) {
     final currentTheme = ref.watch(themeNotifierProvider);
-    
+
     return Row(
       children: [
         Expanded(
@@ -432,10 +444,14 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           gradient: isSelected ? AppTheme.primaryGradient : null,
-          color: isSelected ? null : AppTheme.getSubtitleColor(context).withOpacity(0.1),
+          color: isSelected
+              ? null
+              : AppTheme.getSubtitleColor(context).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Colors.transparent : AppTheme.getSubtitleColor(context).withOpacity(0.2),
+            color: isSelected
+                ? Colors.transparent
+                : AppTheme.getSubtitleColor(context).withValues(alpha: 0.2),
             width: 2,
           ),
         ),
@@ -443,14 +459,18 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : AppTheme.getSubtitleColor(context),
+              color: isSelected
+                  ? Colors.white
+                  : AppTheme.getSubtitleColor(context),
               size: 28,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : AppTheme.getSubtitleColor(context),
+                color: isSelected
+                    ? Colors.white
+                    : AppTheme.getSubtitleColor(context),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 12,
               ),
@@ -490,7 +510,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
             ShaderMask(
-              shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
+              shaderCallback: (bounds) =>
+                  AppTheme.primaryGradient.createShader(bounds),
               child: const Text(
                 'Gamification',
                 style: TextStyle(
@@ -501,21 +522,51 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
-            _buildGamificationOption(context, Icons.emoji_events, 'Badges', AppTheme.warningColor),
-            _buildGamificationOption(context, Icons.leaderboard, 'Leaderboard', AppTheme.primaryColor),
-            _buildGamificationOption(context, Icons.stars, 'Points', AppTheme.successColor),
-            _buildGamificationOption(context, Icons.assignment, 'Quests', AppTheme.secondaryColor),
+            _buildGamificationOption(
+              context,
+              Icons.emoji_events,
+              'Badges',
+              AppTheme.warningColor,
+              '/badges',
+            ),
+            _buildGamificationOption(
+              context,
+              Icons.leaderboard,
+              'Leaderboard',
+              AppTheme.primaryColor,
+              '/leaderboard',
+            ),
+            _buildGamificationOption(
+              context,
+              Icons.stars,
+              'Points',
+              AppTheme.successColor,
+              '/points',
+            ),
+            _buildGamificationOption(
+              context,
+              Icons.assignment,
+              'Quests',
+              AppTheme.secondaryColor,
+              '/quests',
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildGamificationOption(BuildContext context, IconData icon, String title, Color color) {
+  Widget _buildGamificationOption(
+    BuildContext context,
+    IconData icon,
+    String title,
+    Color color,
+    String route,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: ListTile(
@@ -527,16 +578,11 @@ class SettingsScreen extends ConsumerWidget {
           ),
           child: Icon(icon, color: Colors.white, size: 24),
         ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$title screen coming soon!')),
-          );
+          Navigator.pop(context); // Close the bottom sheet
+          context.push(route);
         },
       ),
     );

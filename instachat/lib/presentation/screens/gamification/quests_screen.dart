@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/theme_constants.dart';
 import '../../providers/gamification_provider.dart';
@@ -21,7 +22,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         title: const Text('Challenges & Quests'),
         actions: [
@@ -34,63 +35,64 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
       body: SafeArea(
         child: Column(
           children: [
-          // Category Filter
-          Container(
-            padding: const EdgeInsets.all(AppSizes.paddingMedium),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildCategoryChip('All', 'all'),
-                  const SizedBox(width: 8),
-                  _buildCategoryChip('Daily', 'daily'),
-                  const SizedBox(width: 8),
-                  _buildCategoryChip('Weekly', 'weekly'),
-                  const SizedBox(width: 8),
-                  _buildCategoryChip('Social', 'social'),
-                  const SizedBox(width: 8),
-                  _buildCategoryChip('Creative', 'creative'),
-                  const SizedBox(width: 8),
-                  _buildCategoryChip('Achievement', 'achievement'),
-                ],
-              ),
-            ),
-          ),
-
-          // Quests List
-          Expanded(
-            child: questsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+            // Category Filter
+            Container(
+              padding: const EdgeInsets.all(AppSizes.paddingMedium),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
                   children: [
-                    const Icon(Icons.error, size: 64, color: Colors.grey),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Failed to load quests',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      error.toString(),
-                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => ref.invalidate(questsProvider),
-                      child: const Text('Retry'),
-                    ),
+                    _buildCategoryChip('All', 'all'),
+                    const SizedBox(width: 8),
+                    _buildCategoryChip('Daily', 'daily'),
+                    const SizedBox(width: 8),
+                    _buildCategoryChip('Weekly', 'weekly'),
+                    const SizedBox(width: 8),
+                    _buildCategoryChip('Social', 'social'),
+                    const SizedBox(width: 8),
+                    _buildCategoryChip('Creative', 'creative'),
+                    const SizedBox(width: 8),
+                    _buildCategoryChip('Achievement', 'achievement'),
                   ],
                 ),
               ),
-              data: (quests) => _buildQuestsContent(context, quests),
             ),
-          ),
-        ],
+
+            // Quests List
+            Expanded(
+              child: questsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, _) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error, size: 64, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Failed to load quests',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        error.toString(),
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => ref.invalidate(questsProvider),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+                data: (quests) => _buildQuestsContent(context, quests),
+              ),
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   Widget _buildCategoryChip(String label, String category) {
@@ -110,22 +112,23 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     );
   }
 
-  Widget _buildQuestsContent(BuildContext context, List<Map<String, dynamic>> quests) {
+  Widget _buildQuestsContent(
+    BuildContext context,
+    List<Map<String, dynamic>> quests,
+  ) {
     // Filter quests by category
     final filteredQuests = _selectedCategory == 'all'
         ? quests
-        : quests.where((quest) => quest['category'] == _selectedCategory).toList();
+        : quests
+              .where((quest) => quest['category'] == _selectedCategory)
+              .toList();
 
     if (filteredQuests.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.flag_outlined,
-              size: 80,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.flag_outlined, size: 80, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'No quests available',
@@ -138,10 +141,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
             const SizedBox(height: 8),
             Text(
               'Check back later for new challenges!',
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[500], fontSize: 14),
               textAlign: TextAlign.center,
             ),
           ],
@@ -202,7 +202,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: _getCategoryColor(category).withOpacity(0.2),
+                    color: _getCategoryColor(category).withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -224,15 +224,14 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: isCompleted ? Colors.green.shade800 : Colors.black,
+                          color: isCompleted
+                              ? Colors.green.shade800
+                              : Colors.black,
                         ),
                       ),
                       Text(
                         _getCategoryName(category),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -250,11 +249,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.star,
-                        color: Colors.amber.shade700,
-                        size: 14,
-                      ),
+                      Icon(Icons.star, color: Colors.amber.shade700, size: 14),
                       const SizedBox(width: 4),
                       Text(
                         '$points',
@@ -279,11 +274,9 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
               children: [
                 // Description
                 Text(
-                  quest['description'] ?? 'Complete this challenge to earn points!',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
+                  quest['description'] ??
+                      'Complete this challenge to earn points!',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                 ),
 
                 const SizedBox(height: AppSizes.paddingMedium),
@@ -295,10 +288,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
                     children: [
                       Text(
                         'Progress',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                       Text(
                         '$progress / $target',
@@ -324,10 +314,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
 
                   Text(
                     '${(progressPercentage * 100).round()}% complete',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ] else ...[
                   // Completed Badge
@@ -368,7 +355,9 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: isCompleted ? null : () => _claimQuestReward(context, quest),
+                    onPressed: isCompleted
+                        ? null
+                        : () => _claimQuestReward(context, quest),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isCompleted
                           ? Colors.green.shade100
@@ -379,9 +368,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
                       disabledBackgroundColor: Colors.green.shade100,
                       disabledForegroundColor: Colors.green.shade800,
                     ),
-                    child: Text(
-                      isCompleted ? 'Completed' : 'Claim Reward',
-                    ),
+                    child: Text(isCompleted ? 'Completed' : 'Claim Reward'),
                   ),
                 ),
               ],
@@ -456,20 +443,13 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.celebration,
-              color: Colors.amber.shade600,
-              size: 48,
-            ),
+            Icon(Icons.celebration, color: Colors.amber.shade600, size: 48),
 
             const SizedBox(height: AppSizes.paddingMedium),
 
             Text(
               'Quest Completed!',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
 
@@ -477,10 +457,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
 
             Text(
               'You earned $points points!',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
               textAlign: TextAlign.center,
             ),
 
@@ -514,7 +491,9 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     );
 
     // Update local state
-    ref.read(gamificationProvider.notifier).awardPoints('quest_completed', points);
+    ref
+        .read(gamificationProvider.notifier)
+        .awardPoints('quest_completed', points);
   }
 
   void _showQuestsInfo(BuildContext context) {
@@ -533,7 +512,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: const Text('Got it'),
           ),
         ],

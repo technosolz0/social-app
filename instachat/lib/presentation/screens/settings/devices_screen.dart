@@ -34,9 +34,9 @@ class _DevicesScreenState extends ConsumerState<DevicesScreen> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load devices: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load devices: $e')));
     }
   }
 
@@ -53,9 +53,9 @@ class _DevicesScreenState extends ConsumerState<DevicesScreen> {
         _devices.removeWhere((device) => device['id'] == deviceId);
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Device access revoked')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Device access revoked')));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to revoke device access: $e')),
@@ -82,10 +82,7 @@ class _DevicesScreenState extends ConsumerState<DevicesScreen> {
               Navigator.pop(context);
               _revokeDeviceAccess(device['id']);
             },
-            child: const Text(
-              'Revoke',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Revoke', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -126,85 +123,93 @@ class _DevicesScreenState extends ConsumerState<DevicesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: const Text('Login Devices'),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _devices.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.devices, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text(
-                        'No devices found',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.devices, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No devices found',
+                    style: TextStyle(color: Colors.grey),
                   ),
-                )
-              : ListView.builder(
-                  itemCount: _devices.length,
-                  itemBuilder: (context, index) {
-                    final device = _devices[index];
-                    final isCurrentDevice = device['is_current'] ?? false;
+                ],
+              ),
+            )
+          : ListView.builder(
+              itemCount: _devices.length,
+              itemBuilder: (context, index) {
+                final device = _devices[index];
+                final isCurrentDevice = device['is_current'] ?? false;
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: AppSizes.paddingMedium,
-                        vertical: AppSizes.paddingSmall,
-                      ),
-                      child: ListTile(
-                        leading: Text(
-                          _getDeviceIcon(device['device_type'] ?? 'unknown'),
-                          style: const TextStyle(fontSize: 24),
+                return Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.paddingMedium,
+                    vertical: AppSizes.paddingSmall,
+                  ),
+                  child: ListTile(
+                    leading: Text(
+                      _getDeviceIcon(device['device_type'] ?? 'unknown'),
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                    title: Text(
+                      device['device_name'] ??
+                          '${device['device_type']} Device',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Last active: ${_formatLastActive(device['last_active'] != null ? DateTime.parse(device['last_active']) : null)}',
                         ),
-                        title: Text(
-                          device['device_name'] ?? '${device['device_type']} Device',
-                          style: const TextStyle(fontWeight: FontWeight.w500),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Last active: ${_formatLastActive(device['last_active'] != null ? DateTime.parse(device['last_active']) : null)}',
+                        if (device['location'] != null)
+                          Text(
+                            'Location: ${device['location']}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
                             ),
-                            if (device['location'] != null)
-                              Text(
-                                'Location: ${device['location']}',
-                                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          ),
+                      ],
+                    ),
+                    trailing: isCurrentDevice
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.green),
+                            ),
+                            child: const Text(
+                              'Current',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
                               ),
-                          ],
-                        ),
-                        trailing: isCurrentDevice
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.green),
-                                ),
-                                child: const Text(
-                                  'Current',
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              )
-                            : IconButton(
-                                onPressed: () => _showRevokeDialog(device),
-                                icon: const Icon(
-                                  Icons.logout,
-                                  color: Colors.red,
-                                ),
-                              ),
-                      ),
-                    );
-                  },
-                ),
+                            ),
+                          )
+                        : IconButton(
+                            onPressed: () => _showRevokeDialog(device),
+                            icon: const Icon(Icons.logout, color: Colors.red),
+                          ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

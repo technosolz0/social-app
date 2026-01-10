@@ -5,6 +5,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import '../../core/constants/api_constants.dart';
 import '../models/message_model.dart';
+import '../../core/security/encryption_service.dart';
 
 class WebSocketService {
   static final WebSocketService _instance = WebSocketService._internal();
@@ -97,7 +98,7 @@ class WebSocketService {
     _reconnectTimer = Timer(delay, () {
       if (_authToken != null) {
         if (kDebugMode) {
-          print('🔄 Attempting to reconnect... (${_reconnectAttempts}/${_maxReconnectAttempts})');
+          print('🔄 Attempting to reconnect... ($_reconnectAttempts/$_maxReconnectAttempts)');
         }
         connect(_authToken!);
       }
@@ -110,7 +111,17 @@ class WebSocketService {
 
   void _onMessageReceived(dynamic message) {
     try {
-      final data = jsonDecode(message as String) as Map<String, dynamic>;
+      dynamic parsedMessage = jsonDecode(message as String);
+      
+      // Attempt decryption if payload is present
+      if (parsedMessage is Map<String, dynamic> && parsedMessage.containsKey('payload')) {
+         final decrypted = EncryptionService.decryptData(parsedMessage['payload']);
+         if (decrypted != null) {
+            parsedMessage = decrypted; // This is likely a Map
+         }
+      }
+      
+      final data = parsedMessage as Map<String, dynamic>;
       final messageType = data['type'] as String?;
 
       switch (messageType) {
@@ -269,11 +280,14 @@ class WebSocketService {
 
   void _sendMessage(Map<String, dynamic> message) {
     if (_channel != null && _isConnected) {
-      final jsonMessage = jsonEncode(message);
-      _channel!.sink.add(jsonMessage);
+      // Encrypt
+      final encrypted = EncryptionService.encryptData(message);
+      final payload = jsonEncode({'payload': encrypted});
+      
+      _channel!.sink.add(payload);
 
       if (kDebugMode) {
-        print('📤 Sent WebSocket message: ${message['type']}');
+        print('📤 Sent WebSocket message: ${message['type']} (Encrypted)');
       }
     }
   }

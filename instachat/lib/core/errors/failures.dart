@@ -21,14 +21,12 @@ abstract class Failure {
 
 /// Authentication failures
 class AuthFailure extends Failure {
-  const AuthFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const AuthFailure(super.message, {super.code, super.data});
 }
 
 /// Network failures
 class NetworkFailure extends Failure {
-  const NetworkFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const NetworkFailure(super.message, {super.code, super.data});
 }
 
 /// API failures
@@ -36,11 +34,11 @@ class ApiFailure extends Failure {
   final int? statusCode;
 
   const ApiFailure(
-    String message, {
+    super.message, {
     this.statusCode,
-    String? code,
-    dynamic data,
-  }) : super(message, code: code, data: data);
+    super.code,
+    super.data,
+  });
 
   @override
   List<Object?> get props => [message, code, data, statusCode];
@@ -52,62 +50,52 @@ class ApiFailure extends Failure {
 
 /// Database failures
 class DatabaseFailure extends Failure {
-  const DatabaseFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const DatabaseFailure(super.message, {super.code, super.data});
 }
 
 /// Cache failures
 class CacheFailure extends Failure {
-  const CacheFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const CacheFailure(super.message, {super.code, super.data});
 }
 
-/// Storage failures
+//// Storage failures
 class StorageFailure extends Failure {
-  const StorageFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const StorageFailure(super.message, {super.code, super.data});
 }
 
 /// Validation failures
 class ValidationFailure extends Failure {
-  const ValidationFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const ValidationFailure(super.message, {super.code, super.data});
 }
 
 /// Permission failures
 class PermissionFailure extends Failure {
-  const PermissionFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const PermissionFailure(super.message, {super.code, super.data});
 }
 
 /// File failures
 class FileFailure extends Failure {
-  const FileFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const FileFailure(super.message, {super.code, super.data});
 }
 
 /// Location failures
 class LocationFailure extends Failure {
-  const LocationFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const LocationFailure(super.message, {super.code, super.data});
 }
 
 /// Camera failures
 class CameraFailure extends Failure {
-  const CameraFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const CameraFailure(super.message, {super.code, super.data});
 }
 
 /// Notification failures
 class NotificationFailure extends Failure {
-  const NotificationFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const NotificationFailure(super.message, {super.code, super.data});
 }
 
 /// Payment failures
 class PaymentFailure extends Failure {
-  const PaymentFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const PaymentFailure(super.message, {super.code, super.data});
 }
 
 /// Rate limit failures
@@ -131,26 +119,22 @@ class RateLimitFailure extends Failure {
 
 /// Timeout failures
 class TimeoutFailure extends Failure {
-  const TimeoutFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const TimeoutFailure(super.message, {super.code, super.data});
 }
 
 /// Serialization failures
 class SerializationFailure extends Failure {
-  const SerializationFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const SerializationFailure(super.message, {super.code, super.data});
 }
 
 /// Configuration failures
 class ConfigurationFailure extends Failure {
-  const ConfigurationFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const ConfigurationFailure(super.message, {super.code, super.data});
 }
 
 /// Unknown failures
 class UnknownFailure extends Failure {
-  const UnknownFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const UnknownFailure(super.message, {super.code, super.data});
 }
 
 /// Server failures (5xx status codes)
@@ -185,14 +169,12 @@ class ClientFailure extends Failure {
 
 /// Connection failures
 class ConnectionFailure extends Failure {
-  const ConnectionFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const ConnectionFailure(super.message, {super.code, super.data});
 }
 
 /// Offline failures
 class OfflineFailure extends Failure {
-  const OfflineFailure(String message, {String? code, dynamic data})
-    : super(message, code: code, data: data);
+  const OfflineFailure(super.message, {super.code, super.data});
 }
 
 /// Not found failures
@@ -308,18 +290,15 @@ class DependencyFailure extends Failure {
 
 /// Concurrency failures (when operations conflict)
 class ConcurrencyFailure extends Failure {
-  const ConcurrencyFailure(String message, {String? code, dynamic data})
-    : super(message, code: code ?? 'CONCURRENCY', data: data);
+  const ConcurrencyFailure(super.message, {super.code, super.data});
 }
 
 /// Data integrity failures
 class DataIntegrityFailure extends Failure {
-  const DataIntegrityFailure(String message, {String? code, dynamic data})
-    : super(message, code: code ?? 'DATA_INTEGRITY', data: data);
+  const DataIntegrityFailure(super.message, {super.code, super.data});
 }
 
 /// Business logic failures
 class BusinessLogicFailure extends Failure {
-  const BusinessLogicFailure(String message, {String? code, dynamic data})
-    : super(message, code: code ?? 'BUSINESS_LOGIC', data: data);
+  const BusinessLogicFailure(super.message, {super.code, super.data});
 }

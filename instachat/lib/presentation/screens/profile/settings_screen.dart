@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/theme_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/theme_provider.dart';
+import '../../widgets/common/custom_app_bar.dart';
+import '../../widgets/common/custom_card.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -11,147 +14,254 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text('Settings'),
-      ),
+      // appBar: SettingsAppBar(title: 'Settings'),
       body: ListView(
         children: [
           // Account Section
           _buildSectionHeader('Account'),
-          _buildListTile(
-            context,
-            icon: Icons.person,
-            title: 'Edit Profile',
+          SettingsCard(
             onTap: () => context.push('/edit-profile'),
+            child: _buildListTileContent(
+              icon: Icons.person,
+              title: 'Edit Profile',
+            ),
           ),
-          _buildListTile(
-            context,
-            icon: Icons.lock,
-            title: 'Privacy',
+          SettingsCard(
             onTap: () => context.push('/privacy-settings'),
+            child: _buildListTileContent(icon: Icons.lock, title: 'Privacy'),
           ),
-          _buildListTile(
-            context,
-            icon: Icons.security,
-            title: 'Security',
-            onTap: () => context.push('/security-settings'),
+          SettingsCard(
+            onTap: () => _showSecurityDialog(context),
+            child: _buildListTileContent(
+              icon: Icons.security,
+              title: 'Security',
+            ),
           ),
 
-          const Divider(),
+          const SizedBox(height: 16),
 
           // Content & Activity Section
           _buildSectionHeader('Content & Activity'),
-          _buildListTile(
-            context,
-            icon: Icons.notifications,
-            title: 'Notifications',
+          SettingsCard(
             onTap: () => context.push('/notification-settings'),
+            child: _buildListTileContent(
+              icon: Icons.notifications,
+              title: 'Notifications',
+            ),
           ),
-          _buildListTile(
-            context,
-            icon: Icons.history,
-            title: 'Your Activity',
+          SettingsCard(
             onTap: () => context.push('/activity'),
+            child: _buildListTileContent(
+              icon: Icons.history,
+              title: 'Your Activity',
+            ),
           ),
-          _buildListTile(
-            context,
-            icon: Icons.bookmark,
-            title: 'Saved',
+          SettingsCard(
             onTap: () => _showSavedPosts(context),
+            child: _buildListTileContent(icon: Icons.bookmark, title: 'Saved'),
           ),
 
-          const Divider(),
+          const SizedBox(height: 16),
 
           // Support & About Section
           _buildSectionHeader('Support & About'),
-          _buildListTile(
-            context,
-            icon: Icons.help,
-            title: 'Help Center',
+          SettingsCard(
             onTap: () => context.push('/help'),
+            child: _buildListTileContent(
+              icon: Icons.help,
+              title: 'Help Center',
+            ),
           ),
-          _buildListTile(
-            context,
-            icon: Icons.info,
-            title: 'About',
+          SettingsCard(
             onTap: () => _showAboutDialog(context),
+            child: _buildListTileContent(icon: Icons.info, title: 'About'),
           ),
-          _buildListTile(
-            context,
-            icon: Icons.feedback,
-            title: 'Send Feedback',
+          SettingsCard(
             onTap: () => _showFeedbackDialog(context),
+            child: _buildListTileContent(
+              icon: Icons.feedback,
+              title: 'Send Feedback',
+            ),
           ),
 
-          const Divider(),
+          const SizedBox(height: 16),
 
           // Content & Display Section
           _buildSectionHeader('Content & Display'),
-          _buildSwitchTile(
-            context,
-            icon: Icons.play_circle_outline,
-            title: 'Auto-scroll Reels',
-            subtitle: 'Automatically play next reel when current one ends',
-            value: ref.watch(settingsProvider).autoScrollReels,
-            onChanged: (value) => ref.read(settingsProvider.notifier).setAutoScrollReels(value),
+          SettingsCard(
+            child: _buildSwitchTileContent(
+              context,
+              icon: Icons.play_circle_outline,
+              title: 'Auto-scroll Reels',
+              subtitle: 'Automatically play next reel when current one ends',
+              value: ref.watch(settingsProvider).autoScrollReels,
+              onChanged: (value) =>
+                  ref.read(settingsProvider.notifier).setAutoScrollReels(value),
+            ),
           ),
-          _buildListTile(
-            context,
-            icon: Icons.live_tv,
-            title: 'Live Streaming',
-            subtitle: 'Go live and stream to your followers',
+          SettingsCard(
             onTap: () => context.push('/live-streaming'),
+            child: _buildListTileContent(
+              icon: Icons.live_tv,
+              title: 'Live Streaming',
+              subtitle: 'Go live and stream to your followers',
+            ),
           ),
 
-          const Divider(),
+          const SizedBox(height: 16),
 
           // Preferences Section
           _buildSectionHeader('Preferences'),
-          _buildSwitchTile(
-            context,
-            icon: Icons.dark_mode,
-            title: 'Dark Mode',
-            value: ref.watch(settingsProvider).isDarkMode,
-            onChanged: (value) => ref.read(settingsProvider.notifier).setDarkMode(value),
+          SettingsCard(
+            onTap: () => _showThemeDialog(context, ref),
+            child: _buildThemeModeTileContent(context, ref),
           ),
-          _buildListTile(
-            context,
-            icon: Icons.language,
-            title: 'Language',
-            subtitle: ref.watch(settingsProvider).language == 'en' ? 'English' : 'Other',
+          SettingsCard(
             onTap: () => _showLanguageDialog(context),
-          ),
-          _buildListTile(
-            context,
-            icon: Icons.notifications,
-            title: 'Notifications',
-            onTap: () => context.push('/notification-settings'),
-          ),
-          _buildListTile(
-            context,
-            icon: Icons.privacy_tip,
-            title: 'Privacy & Safety',
-            onTap: () => context.push('/privacy-settings'),
+            child: _buildListTileContent(
+              icon: Icons.language,
+              title: 'Language',
+              subtitle: ref.watch(settingsProvider).language == 'en'
+                  ? 'English'
+                  : 'Other',
+            ),
           ),
 
-          const Divider(),
+          const SizedBox(height: 16),
 
           // Account Actions Section
           _buildSectionHeader('Account'),
-          _buildListTile(
-            context,
-            icon: Icons.logout,
-            title: 'Logout',
-            textColor: Colors.red,
+          SettingsCard(
             onTap: () => _showLogoutDialog(context, ref),
+            child: _buildListTileContent(
+              icon: Icons.logout,
+              title: 'Logout',
+              textColor: Colors.red,
+            ),
           ),
           const SizedBox(height: 20),
         ],
       ),
+    );
+  }
+
+  Widget _buildListTileContent({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Color? textColor,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, color: textColor ?? Colors.grey[600]),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ],
+          ),
+        ),
+        Icon(Icons.chevron_right, color: Colors.grey[400]),
+      ],
+    );
+  }
+
+  Widget _buildSwitchTileContent(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.grey[600]),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ],
+          ),
+        ),
+        Switch(value: value, onChanged: onChanged),
+      ],
+    );
+  }
+
+  Widget _buildThemeModeTileContent(BuildContext context, WidgetRef ref) {
+    final currentMode = ref.watch(themeNotifierProvider);
+    final brightness = MediaQuery.of(context).platformBrightness;
+
+    String getModeText() {
+      switch (currentMode) {
+        case AppThemeMode.light:
+          return 'Light';
+        case AppThemeMode.dark:
+          return 'Dark';
+        case AppThemeMode.system:
+          return brightness == Brightness.dark
+              ? 'System (Dark)'
+              : 'System (Light)';
+      }
+    }
+
+    return Row(
+      children: [
+        Icon(Icons.dark_mode, color: Colors.grey[600]),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Theme',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                getModeText(),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+        Icon(Icons.chevron_right, color: Colors.grey[400]),
+      ],
     );
   }
 
@@ -180,10 +290,7 @@ class SettingsScreen extends ConsumerWidget {
   }) {
     return ListTile(
       leading: Icon(icon, color: textColor),
-      title: Text(
-        title,
-        style: TextStyle(color: textColor),
-      ),
+      title: Text(title, style: TextStyle(color: textColor)),
       subtitle: subtitle != null ? Text(subtitle) : null,
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
@@ -204,6 +311,104 @@ class SettingsScreen extends ConsumerWidget {
       subtitle: subtitle != null ? Text(subtitle) : null,
       value: value,
       onChanged: onChanged,
+    );
+  }
+
+  Widget _buildThemeModeTile(BuildContext context, WidgetRef ref) {
+    final currentMode = ref.watch(themeNotifierProvider);
+    final brightness = MediaQuery.of(context).platformBrightness;
+
+    String getModeText() {
+      switch (currentMode) {
+        case AppThemeMode.light:
+          return 'Light';
+        case AppThemeMode.dark:
+          return 'Dark';
+        case AppThemeMode.system:
+          return brightness == Brightness.dark
+              ? 'System (Dark)'
+              : 'System (Light)';
+      }
+    }
+
+    return ListTile(
+      leading: const Icon(Icons.dark_mode),
+      title: const Text('Theme'),
+      subtitle: Text(getModeText()),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => _showThemeDialog(context, ref),
+    );
+  }
+
+  void _showThemeDialog(BuildContext context, WidgetRef ref) {
+    final currentMode = ref.read(themeNotifierProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Choose Theme'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RadioListTile<AppThemeMode>(
+              title: const Text('Light'),
+              value: AppThemeMode.light,
+              groupValue: currentMode,
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(themeNotifierProvider.notifier).setThemeMode(value);
+                  Navigator.pop(context);
+                }
+              },
+            ),
+            RadioListTile<AppThemeMode>(
+              title: const Text('Dark'),
+              value: AppThemeMode.dark,
+              groupValue: currentMode,
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(themeNotifierProvider.notifier).setThemeMode(value);
+                  Navigator.pop(context);
+                }
+              },
+            ),
+            RadioListTile<AppThemeMode>(
+              title: const Text('System'),
+              subtitle: const Text('Follow system setting'),
+              value: AppThemeMode.system,
+              groupValue: currentMode,
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(themeNotifierProvider.notifier).setThemeMode(value);
+                  Navigator.pop(context);
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSecurityDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Security Settings'),
+        content: const Text('Security settings will be available soon.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -312,10 +517,7 @@ class SettingsScreen extends ConsumerWidget {
                 context.go('/login');
               }
             },
-            child: const Text(
-              'Logout',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

@@ -4,12 +4,15 @@ import '../../../core/constants/theme_constants.dart';
 
 // Provider for followers (mock data for now)
 final followersProvider = StateProvider<List<Map<String, dynamic>>>((ref) {
-  return List.generate(15, (index) => {
-    'id': 'follower_$index',
-    'username': 'follower_$index',
-    'avatar': 'https://picsum.photos/100/100?random=$index',
-    'isFollowing': index % 3 == 0, // Some are following back
-  });
+  return List.generate(
+    15,
+    (index) => {
+      'id': 'follower_$index',
+      'username': 'follower_$index',
+      'avatar': 'https://picsum.photos/100/100?random=$index',
+      'isFollowing': index % 3 == 0, // Some are following back
+    },
+  );
 });
 
 class FollowersScreen extends ConsumerWidget {
@@ -39,7 +42,11 @@ class FollowersScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFollowerItem(BuildContext context, Map<String, dynamic> follower, WidgetRef ref) {
+  Widget _buildFollowerItem(
+    BuildContext context,
+    Map<String, dynamic> follower,
+    WidgetRef ref,
+  ) {
     return FollowerItem(
       follower: follower,
       onFollow: () {
@@ -51,7 +58,9 @@ class FollowersScreen extends ConsumerWidget {
       onRemove: () {
         // Remove follower logic
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Removed ${follower['username']} from followers')),
+          SnackBar(
+            content: Text('Removed ${follower['username']} from followers'),
+          ),
         );
       },
       onTap: () {
@@ -175,13 +184,9 @@ class _FollowerItemState extends State<FollowerItem>
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
-                child: const Icon(
-                  Icons.favorite,
-                  color: Colors.red,
-                  size: 24,
-                ),
+                child: const Icon(Icons.favorite, color: Colors.red, size: 24),
               ),
             ),
           ),
@@ -192,15 +197,16 @@ class _FollowerItemState extends State<FollowerItem>
             right: 120,
             top: 10,
             child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0),
-                end: const Offset(0, -1.5),
-              ).animate(
-                CurvedAnimation(
-                  parent: _pointsAnimationController,
-                  curve: Curves.easeOut,
-                ),
-              ),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 0),
+                    end: const Offset(0, -1.5),
+                  ).animate(
+                    CurvedAnimation(
+                      parent: _pointsAnimationController,
+                      curve: Curves.easeOut,
+                    ),
+                  ),
               child: FadeTransition(
                 opacity: Tween<double>(begin: 1.0, end: 0.0).animate(
                   CurvedAnimation(
@@ -209,7 +215,10 @@ class _FollowerItemState extends State<FollowerItem>
                   ),
                 ),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
@@ -217,7 +226,7 @@ class _FollowerItemState extends State<FollowerItem>
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.green.withOpacity(0.4),
+                        color: Colors.green.withValues(alpha: 0.4),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),

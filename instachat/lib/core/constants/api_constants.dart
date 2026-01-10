@@ -1,48 +1,93 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+
 class ApiConstants {
-  // Base URL - Change this to your backend URL
-  // For mobile emulator/device, use host machine IP instead of localhost
-  // Android emulator: 10.129.254.167, iOS simulator: 127.0.0.1 or host IP
-  // For physical devices, use your computer's IP address
-  static const String baseUrl = 'http://10.129.254.167:8000';
-  static const String apiVersion = '/api/v1';
-  static const String apiBaseUrl = '$baseUrl$apiVersion';
+  // Base URL - Auto-switching based on platform
+  // Default for physical device: 192.168.43.227
+  // (Change this to your computer's local IP if different)
+  static const String _localIp = '192.168.43.227';
+
+  static String get baseUrl {
+    if (kReleaseMode) {
+      return 'https://api.production.com'; // Replace with production URL
+    }
+
+    // Check if running on Android Emulator
+    // Model 'sdk_gphone' is standard for Google emulators.
+    // Manually checking environment is tricky in Dart, but we can infer.
+    // Safer default for emulator is 10.0.2.2 which maps to host localhost.
+    if (!kIsWeb && Platform.isAndroid) {
+      // return 'http://10.0.2.2:8000'; // for emulator
+      return 'http://192.168.43.227:8000'; // for physical device
+    }
+
+    // For iOS Simulator, localhost works
+    if (!kIsWeb && Platform.isIOS) {
+      return 'http://127.0.0.1:8000';
+    }
+
+    return 'http://$_localIp:8000';
+  }
+
+  static String get apiVersion => '/api/v1';
+  static String get apiBaseUrl => '$baseUrl$apiVersion';
 
   // WebSocket URL
-  static const String wsUrl = 'ws://10.129.254.167:8002/ws';
+  static String get wsBaseUrl {
+    if (kReleaseMode) return 'wss://api.production.com/ws';
+    if (!kIsWeb && Platform.isAndroid) {
+      // return 'ws://10.0.2.2:8002/ws'; // for emulator
+      return 'ws://192.168.43.227:8002/ws'; // for physical device
+    }
+    if (!kIsWeb && Platform.isIOS) return 'ws://127.0.0.1:8002/ws';
+    return 'ws://$_localIp:8002/ws';
+  }
+
+  static String get wsUrl => wsBaseUrl;
 
   // FastAPI Service URL (port 8001)
-  static const String fastApiBaseUrl = 'http://10.129.254.167:8001';
+  static String get fastApiUrl {
+    if (kReleaseMode) return 'https://fastapi.production.com';
+    if (!kIsWeb && Platform.isAndroid) {
+      // return 'http://10.0.2.2:8001'; // for emulator
+      return 'http://192.168.43.227:8001'; // for physical device
+    }
+    if (!kIsWeb && Platform.isIOS) return 'http://127.0.0.1:8001';
+    return 'http://$_localIp:8001';
+  }
+
+  static String get fastApiBaseUrl => fastApiUrl;
 
   // Auth Endpoints
-  static const String login = '$apiBaseUrl/users/login/';
-  static const String register =
-      '$apiBaseUrl/users/'; // POST to users/ for registration
-  static const String logout = '$apiBaseUrl/auth/logout/';
-  static const String refreshToken = '$apiBaseUrl/auth/refresh/';
-  static const String getCurrentUser = '$apiBaseUrl/users/me/';
-  static const String passwordReset = '$apiBaseUrl/users/password-reset/';
-  static const String passwordResetConfirm = '$apiBaseUrl/users/password-reset-confirm/';
+  static String get login => '$apiBaseUrl/users/login/';
+  static String get register => '$apiBaseUrl/users/';
+  static String get logout => '$apiBaseUrl/auth/logout/';
+  static String get refreshToken => '$apiBaseUrl/auth/refresh/';
+  static String get getCurrentUser => '$apiBaseUrl/users/me/';
+  static String get passwordReset => '$apiBaseUrl/users/password-reset/';
+  static String get passwordResetConfirm =>
+      '$apiBaseUrl/users/password-reset-confirm/';
 
   // User Endpoints
-  static const String users = '$apiBaseUrl/users/';
+  static String get users => '$apiBaseUrl/users/';
   static String userById(String id) => '$users$id/';
   static String userFollowers(String id) => '$users$id/followers/';
   static String userFollowing(String id) => '$users$id/following/';
 
   // Social Endpoints
-  static const String social = '$apiBaseUrl/social/';
-  static const String follows = '$social/follows/';
-  static const String followUser = '$follows/follow_user/';
-  static const String unfollowUser = '$follows/unfollow_user/';
-  static const String likes = '$social/likes/';
-  static const String comments = '$social/comments/';
+  static String get social => '$apiBaseUrl/social/';
+  static String get follows => '$social/follows/';
+  static String get followUser => '$follows/follow_user/';
+  static String get unfollowUser => '$follows/unfollow_user/';
+  static String get likes => '$social/likes/';
+  static String get comments => '$social/comments/';
 
   // Post Endpoints
-  static const String posts = '$apiBaseUrl/posts/';
+  static String get posts => '$apiBaseUrl/posts/';
   static String postById(String id) => '$posts$id/';
-  static const String feed = '$posts/feed/';
-  static const String trending = '$posts/trending/';
-  static const String explore = '$posts/explore/';
+  static String get feed => '${posts}feed/';
+  static String get trending => '${posts}trending/';
+  static String get explore => '${posts}explore/';
   static String likePost(String id) => '$posts$id/like/';
   static String unlikePost(String id) => '$posts$id/unlike/';
   static String postComments(String id) => '$posts$id/comments/';
@@ -50,71 +95,71 @@ class ApiConstants {
   static String sharePost(String id) => '$posts$id/share/';
 
   // Story Endpoints
-  static const String stories = '$apiBaseUrl/stories/';
+  static String get stories => '$apiBaseUrl/stories/';
   static String storyById(String id) => '$stories$id/';
   static String viewStory(String id) => '$stories$id/view/';
-  static const String myStories = '$stories/my_stories/';
-  static const String storyHighlights = '$stories/highlights/';
+  static String get myStories => '$stories/my_stories/';
+  static String get storyHighlights => '$stories/highlights/';
 
   // Reel Endpoints
-  static const String reels = '$apiBaseUrl/reels/';
+  static String get reels => '$apiBaseUrl/reels/';
   static String reelById(String id) => '$reels$id/';
 
   // Chat Endpoints
-  static const String conversations = '$apiBaseUrl/chat/conversations/';
+  static String get conversations => '$apiBaseUrl/chat/conversations/';
   static String conversationById(String id) => '$conversations$id/';
   static String conversationMessages(String id) =>
       '$apiBaseUrl/chat/messages/?conversation_id=$id';
   static String sendMessage(String id) => '$apiBaseUrl/chat/messages/';
 
   // Notification Endpoints
-  static const String notifications = '$apiBaseUrl/notifications/';
+  static String get notifications => '$apiBaseUrl/notifications/';
   static String notificationById(String id) => '$notifications$id/';
   static String markNotificationRead(String id) => '$notifications$id/read/';
-  static const String unreadCount = '$notifications/unread_count/';
-  static const String markAllRead = '$notifications/mark_all_read/';
-  static const String clearAll = '$notifications/clear_all/';
+  static String get unreadCount => '$notifications/unread_count/';
+  static String get markAllRead => '$notifications/mark_all_read/';
+  static String get clearAll => '$notifications/clear_all/';
 
   // Push Token Endpoints
-  static const String pushTokens = '$apiBaseUrl/push-tokens/';
+  static String get pushTokens => '$apiBaseUrl/notifications/api/push-tokens/';
 
   // Notification Preferences Endpoints
-  static const String notificationPreferences = '$apiBaseUrl/preferences/';
+  static String get notificationPreferences => '$apiBaseUrl/notifications/api/preferences/';
 
   // Search Endpoints
-  static const String search = '$apiBaseUrl/search/';
-  static const String searchUsers = '$search/users/';
-  static const String searchPosts = '$search/posts/';
+  // Search Endpoints
+  static String get search => '$apiBaseUrl/search';
+  static String get searchUsers => '$search/users/';
+  static String get searchPosts => '$search/posts/';
 
   // Gamification Endpoints
-  static const String gamification = '$apiBaseUrl/gamification/';
-  static const String points = '$gamification/points/';
-  static const String badges = '$gamification/badges/';
-  static const String leaderboard = '$gamification/leaderboard/';
-  static const String quests = '$gamification/quests/';
+  static String get gamification => '$apiBaseUrl/gamification/';
+  static String get points => '$gamification/points/';
+  static String get badges => '$gamification/badges/';
+  static String get leaderboard => '$gamification/leaderboard/';
+  static String get quests => '$gamification/quests/';
 
   // Activity Endpoints
-  static const String activities = '$apiBaseUrl/activities/';
+  static String get activities => '$apiBaseUrl/activities/';
 
   // FastAPI Feed Endpoints
-  static const String fastApiFeed = '$fastApiBaseUrl/feed';
-  static const String forYouFeed = '$fastApiFeed/for-you/';
-  static const String trendingFeed = '$fastApiFeed/trending/';
-  static const String exploreFeed = '$fastApiFeed/explore/';
+  static String get fastApiFeed => '$fastApiBaseUrl/feed';
+  static String get forYouFeed => '$fastApiFeed/for-you/';
+  static String get trendingFeed => '$fastApiFeed/trending/';
+  static String get exploreFeed => '$fastApiFeed/explore/';
 
   // FastAPI Recommendations Endpoints
-  static const String fastApiRecommendations =
-      '$fastApiBaseUrl/recommendations';
-  static const String userRecommendations = '$fastApiRecommendations/users/';
-  static const String contentRecommendations =
+  static String get fastApiRecommendations => '$fastApiBaseUrl/recommendations';
+  static String get userRecommendations => '$fastApiRecommendations/users/';
+  static String get contentRecommendations =>
       '$fastApiRecommendations/content/';
-  static const String hashtagRecommendations =
+  static String get hashtagRecommendations =>
       '$fastApiRecommendations/hashtags/';
 
   // Storage Endpoints
-  static const String upload = '$apiBaseUrl/upload/';
-  static const String uploadImage = '$upload/image/';
-  static const String uploadVideo = '$upload/video/';
+  static String get upload => '$apiBaseUrl/upload/';
+  static String get uploadImage => '$upload/image/';
+  static String get uploadVideo => '$upload/video/';
 
   // Request timeouts
   static const Duration connectTimeout = Duration(seconds: 10);

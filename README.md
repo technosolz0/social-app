@@ -67,7 +67,7 @@ A comprehensive social media application built with Flutter (frontend) and Djang
    ```
 
 2. **Configure API endpoints:**
-   - For Android emulator: `10.129.254.167:8000` (already configured)
+   - For Android emulator: `192.168.43.227:8000` (already configured)
    - For physical device: Use your computer's IP address
    - Update `lib/core/constants/api_constants.dart` if needed
 

@@ -28,7 +28,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      await ref.read(authNotifierProvider.notifier).login(
+      await ref
+          .read(authNotifierProvider.notifier)
+          .login(
             identifier: _emailController.text.trim(),
             password: _passwordController.text,
           );
@@ -38,10 +40,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = e.toString();
+        // Check for common connection errors
+        if (errorMessage.contains('Network is unreachable') ||
+            errorMessage.contains('Connection refused') ||
+            errorMessage.contains('SocketException')) {
+          errorMessage =
+              'Connection failed. Please check your internet connection.\n'
+              'If using an Emulator, ensure your backend is running on 10.0.2.2 or accessible IP.\n'
+              'Current Error: Network is unreachable';
+        } else if (errorMessage.contains('403')) {
+          errorMessage = 'Invalid credentials or account mismatch.';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Dismiss',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
           ),
         );
       }
@@ -75,10 +98,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const Text(
                     'Social App',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 48),
 
@@ -141,8 +161,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Text(

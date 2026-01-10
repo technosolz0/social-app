@@ -1,11 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
-import '../../data/services/local_storage_service.dart';
 import 'activity_tracker_provider.dart';
 
 part 'auth_provider.g.dart';
@@ -79,6 +76,9 @@ class AuthNotifier extends _$AuthNotifier {
 
       // 3. Get user data
       final user = await _authRepository.getCurrentUser();
+      
+      // Save User ID securely
+      await _authRepository.localStorage.saveUserId(user.id);
 
       // 4. Update state with user data
       state = state.copyWith(
@@ -111,6 +111,9 @@ class AuthNotifier extends _$AuthNotifier {
 
       // Get user data
       final user = await _authRepository.getCurrentUser();
+      
+      // Save User ID securely
+      await _authRepository.localStorage.saveUserId(user.id);
 
       state = state.copyWith(
         user: user,

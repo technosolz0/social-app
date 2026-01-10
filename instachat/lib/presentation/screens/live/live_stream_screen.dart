@@ -93,9 +93,14 @@ class _LiveStreamScreenState extends ConsumerState<LiveStreamScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: _isLive ? Colors.red : Colors.grey.withOpacity(0.5),
+                      color: _isLive
+                          ? Colors.red
+                          : Colors.grey.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -142,7 +147,10 @@ class _LiveStreamScreenState extends ConsumerState<LiveStreamScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Text(
                             _comments[index],
-                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
                           ),
                         );
                       },
@@ -155,11 +163,19 @@ class _LiveStreamScreenState extends ConsumerState<LiveStreamScreen> {
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 48,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
                       ),
                       onPressed: _toggleLive,
-                      child: const Text('GO LIVE', style: TextStyle(fontSize: 18)),
+                      child: const Text(
+                        'GO LIVE',
+                        style: TextStyle(fontSize: 18),
+                      ),
                     )
                   else
                     Row(
@@ -176,8 +192,10 @@ class _LiveStreamScreenState extends ConsumerState<LiveStreamScreen> {
                                 borderSide: BorderSide.none,
                               ),
                               filled: true,
-                              fillColor: Colors.white.withOpacity(0.2),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                              fillColor: Colors.white.withValues(alpha: 0.2),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                             ),
                           ),
                         ),
@@ -188,7 +206,11 @@ class _LiveStreamScreenState extends ConsumerState<LiveStreamScreen> {
                         ),
                         const SizedBox(width: 8),
                         IconButton(
-                          icon: const Icon(Icons.stop_circle, color: Colors.red, size: 32),
+                          icon: const Icon(
+                            Icons.stop_circle,
+                            color: Colors.red,
+                            size: 32,
+                          ),
                           onPressed: _toggleLive,
                         ),
                       ],

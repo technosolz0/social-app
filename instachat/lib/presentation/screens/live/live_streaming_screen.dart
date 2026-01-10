@@ -10,7 +10,8 @@ class LiveStreamingScreen extends ConsumerStatefulWidget {
   const LiveStreamingScreen({super.key});
 
   @override
-  ConsumerState<LiveStreamingScreen> createState() => _LiveStreamingScreenState();
+  ConsumerState<LiveStreamingScreen> createState() =>
+      _LiveStreamingScreenState();
 }
 
 class _LiveStreamingScreenState extends ConsumerState<LiveStreamingScreen> {
@@ -63,7 +64,8 @@ class _LiveStreamingScreenState extends ConsumerState<LiveStreamingScreen> {
     _viewerTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (mounted && _isStreaming) {
         setState(() {
-          _viewerCount += (DateTime.now().second % 5) - 2; // Random increase/decrease
+          _viewerCount +=
+              (DateTime.now().second % 5) - 2; // Random increase/decrease
           _viewerCount = _viewerCount.clamp(0, 10000); // Keep between 0-10k
         });
       }
@@ -77,14 +79,14 @@ class _LiveStreamingScreenState extends ConsumerState<LiveStreamingScreen> {
 
     if (_isStreaming) {
       // Start streaming logic would go here
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('🎥 Live stream started!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('🎥 Live stream started!')));
     } else {
       // Stop streaming logic would go here
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⏹️ Live stream ended')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('⏹️ Live stream ended')));
     }
   }
 
@@ -122,10 +124,10 @@ class _LiveStreamingScreenState extends ConsumerState<LiveStreamingScreen> {
           // Camera Preview
           if (_isInitialized && _cameraController != null)
             Transform.scale(
-              scale: _cameraController!.value.aspectRatio / MediaQuery.of(context).size.aspectRatio,
-              child: Center(
-                child: CameraPreview(_cameraController!),
-              ),
+              scale:
+                  _cameraController!.value.aspectRatio /
+                  MediaQuery.of(context).size.aspectRatio,
+              child: Center(child: CameraPreview(_cameraController!)),
             )
           else
             Container(
@@ -145,7 +147,10 @@ class _LiveStreamingScreenState extends ConsumerState<LiveStreamingScreen> {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(20),
@@ -174,9 +179,12 @@ class _LiveStreamingScreenState extends ConsumerState<LiveStreamingScreen> {
                   ),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -222,7 +230,7 @@ class _LiveStreamingScreenState extends ConsumerState<LiveStreamingScreen> {
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                     colors: [
-                      Colors.black.withOpacity(0.8),
+                      Colors.black.withValues(alpha: 0.8),
                       Colors.transparent,
                     ],
                   ),
@@ -236,7 +244,8 @@ class _LiveStreamingScreenState extends ConsumerState<LiveStreamingScreen> {
                         reverse: true,
                         itemCount: _comments.length,
                         itemBuilder: (context, index) {
-                          final comment = _comments[_comments.length - 1 - index];
+                          final comment =
+                              _comments[_comments.length - 1 - index];
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 4),
                             child: Row(
@@ -272,7 +281,7 @@ class _LiveStreamingScreenState extends ConsumerState<LiveStreamingScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: TextField(
@@ -290,10 +299,7 @@ class _LiveStreamingScreenState extends ConsumerState<LiveStreamingScreen> {
                         const SizedBox(width: 8),
                         IconButton(
                           onPressed: _sendComment,
-                          icon: const Icon(
-                            Icons.send,
-                            color: Colors.white,
-                          ),
+                          icon: const Icon(Icons.send, color: Colors.white),
                         ),
                       ],
                     ),
@@ -369,10 +375,7 @@ class _LiveStreamingScreenState extends ConsumerState<LiveStreamingScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'Share your moment with followers',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
                   ),
                   const SizedBox(height: 32),
                   Row(
@@ -416,11 +419,7 @@ class _LiveStreamingScreenState extends ConsumerState<LiveStreamingScreen> {
               left: 16,
               child: IconButton(
                 onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 28,
-                ),
+                icon: const Icon(Icons.close, color: Colors.white, size: 28),
               ),
             ),
           ],
@@ -442,15 +441,11 @@ class _LiveStreamingScreenState extends ConsumerState<LiveStreamingScreen> {
           height: 50,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
           ),
           child: IconButton(
             onPressed: onTap,
-            icon: Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
+            icon: Icon(icon, color: color, size: 24),
           ),
         ),
         if (label.isNotEmpty) ...[

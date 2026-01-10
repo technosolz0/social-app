@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.contenttypes.models import ContentType
 from .models import Follow, Like, Comment
 from .serializers import FollowSerializer, LikeSerializer, CommentSerializer
 from apps.users.models import CustomUser
@@ -81,28 +82,51 @@ class LikeViewSet(viewsets.ViewSet):
         post_id = request.data.get('post_id')
         comment_id = request.data.get('comment_id')
 
-        if post_id:
-            # Like a post
-            like, created = Like.objects.get_or_create(
-                user=request.user,
-                post_id=post_id
-            )
-        elif comment_id:
-            # Like a comment
-            like, created = Like.objects.get_or_create(
-                user=request.user,
-                comment_id=comment_id
-            )
-        else:
-            return Response(
-                {'error': 'Either post_id or comment_id is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        try:
+            if post_id:
+                # Like a post
+                from apps.content.models import Post
+                post = Post.objects.get(id=post_id)
+                like, created = Like.objects.get_or_create(
+                    user=request.user,
+                    content_type=ContentType.objects.get_for_model(Post),
+                    object_id=post.id,
+                    defaults={'content_object': post}
+                )
+            elif comment_id:
+                # Like a comment
+                from .models import Comment
+                comment = Comment.objects.get(id=comment_id)
+                like, created = Like.objects.get_or_create(
+                    user=request.user,
+                    content_type=ContentType.objects.get_for_model(Comment),
+                    object_id=comment.id,
+                    defaults={'content_object': comment}
+                )
 
-        return Response({
-            'liked': created,
-            'message': 'Liked' if created else 'Already liked'
-        })
+                # Update comment likes count
+                if created:
+                    comment.likes_count += 1
+                else:
+                    comment.likes_count -= 1
+                comment.save()
+
+            else:
+                return Response(
+                    {'error': 'Either post_id or comment_id is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            return Response({
+                'liked': created,
+                'message': 'Liked' if created else 'Unliked'
+            })
+
+        except (Post.DoesNotExist, Comment.DoesNotExist):
+            return Response(
+                {'error': 'Content not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
     def destroy(self, request, pk=None):
         """Unlike a post or comment"""
@@ -156,21 +180,35 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment = self.get_object()
         like, created = Like.objects.get_or_create(
             user=request.user,
-            comment=comment
+            content_type=ContentType.objects.get_for_model(Comment),
+            object_id=comment.id,
+            defaults={'content_object': comment}
         )
+
+        # Update comment likes count
+        if created:
+            comment.likes_count += 1
+        else:
+            comment.likes_count -= 1
+        comment.save()
 
         return Response({
             'liked': created,
-            'message': 'Liked' if created else 'Already liked'
+            'message': 'Liked' if created else 'Unliked'
         })
 
     @action(detail=True, methods=['delete'])
     def unlike(self, request, pk=None):
         """Unlike a comment"""
         comment = self.get_object()
-        Like.objects.filter(
+        deleted_count, _ = Like.objects.filter(
             user=request.user,
-            comment=comment
+            content_type=ContentType.objects.get_for_model(Comment),
+            object_id=comment.id
         ).delete()
+
+        if deleted_count > 0:
+            comment.likes_count = max(0, comment.likes_count - 1)
+            comment.save()
 
         return Response({'message': 'Unliked successfully'})

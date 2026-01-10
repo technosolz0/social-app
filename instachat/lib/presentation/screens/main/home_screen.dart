@@ -10,14 +10,15 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: ShaderMask(
-          shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
+          shaderCallback: (bounds) =>
+              AppTheme.primaryGradient.createShader(bounds),
           child: const Text(
             'Social App',
             style: TextStyle(
@@ -32,7 +33,7 @@ class HomeScreen extends ConsumerWidget {
           // Activity/Notifications
           Container(
             margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
               gradient: AppTheme.secondaryGradient,
             ),
@@ -45,7 +46,7 @@ class HomeScreen extends ConsumerWidget {
           // Messages/Chat
           Container(
             margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
               gradient: AppTheme.accentGradient,
             ),
@@ -53,22 +54,6 @@ class HomeScreen extends ConsumerWidget {
               icon: const Icon(Icons.send_outlined, color: Colors.white),
               onPressed: () => context.push('/chats'),
               tooltip: 'Messages',
-            ),
-          ),
-          // Settings
-          Container(
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
-            ),
-            child: IconButton(
-              icon: Icon(
-                Icons.settings_outlined,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              onPressed: () => context.push('/settings'),
-              tooltip: 'Settings',
             ),
           ),
         ],
@@ -79,19 +64,11 @@ class HomeScreen extends ConsumerWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: isDark
-                ? [
-                    const Color(0xFF0A0E27),
-                    const Color(0xFF1A1F3A),
-                  ]
-                : [
-                    const Color(0xFFF8F9FA),
-                    const Color(0xFFE9ECEF),
-                  ],
+                ? [const Color(0xFF0A0E27), const Color(0xFF1A1F3A)]
+                : [const Color(0xFFF8F9FA), const Color(0xFFE9ECEF)],
           ),
         ),
-        child: SafeArea(
-          child: FeedScreen(),
-        ),
+        child: const SafeArea(child: FeedScreen()),
       ),
     );
   }

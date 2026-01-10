@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/theme_constants.dart';
 import '../../../data/services/api_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/common/custom_app_bar.dart';
 
 class AccountSettingsScreen extends ConsumerStatefulWidget {
   const AccountSettingsScreen({super.key});
@@ -133,9 +134,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
     final authState = ref.watch(authNotifierProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Account Settings'),
-      ),
+      appBar: SettingsAppBar(title: 'Account Settings'),
       body: ListView(
         children: [
           // Account Information Section

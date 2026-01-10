@@ -54,11 +54,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.notifications_none,
-            size: 80,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.notifications_none, size: 80, color: Colors.grey[400]),
           const SizedBox(height: AppSizes.paddingLarge),
           Text(
             'No activity yet',
@@ -71,10 +67,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           const SizedBox(height: AppSizes.paddingMedium),
           Text(
             'Your activity will appear here',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[500]),
           ),
         ],
       ),
@@ -173,10 +166,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 const SizedBox(height: 2),
                 Text(
                   timeago.format(activity.timestamp),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -251,14 +241,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
       ),
-      child: Icon(
-        icon,
-        color: color,
-        size: 20,
-      ),
+      child: Icon(icon, color: color, size: 20),
     );
   }
 
@@ -293,7 +279,14 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
   bool _hasAction(String activityType) {
     // Some activities might have actions (like viewing the related post)
-    return ['post_view', 'post_like', 'story_view', 'profile_view', 'comment', 'share'].contains(activityType);
+    return [
+      'post_view',
+      'post_like',
+      'story_view',
+      'profile_view',
+      'comment',
+      'share',
+    ].contains(activityType);
   }
 
   void _showActivityMenu(BuildContext context) {
@@ -358,10 +351,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 }
               }
             },
-            child: const Text(
-              'Clear All',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Clear All', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -411,7 +401,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       default:
         // For other activity types, just show a snackbar
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No related content available for ${activity.activityType}')),
+          SnackBar(
+            content: Text(
+              'No related content available for ${activity.activityType}',
+            ),
+          ),
         );
     }
   }

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:instachat/data/models/user_model.dart';
 import '../../../core/constants/theme_constants.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/post_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -17,6 +16,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedTabIndex = 0;
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoadingMore = false;
+  int _currentPage = 1;
+  final int _pageSize = 30; // Load 30 posts at a time for grid
+  List<String> _posts = [];
+  bool _hasMorePosts = true;
 
   @override
   void initState() {
@@ -25,12 +30,60 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     _tabController.addListener(() {
       setState(() => _selectedTabIndex = _tabController.index);
     });
+    _scrollController.addListener(_onScroll);
+    _loadInitialPosts();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 500) {
+      _loadMorePosts();
+    }
+  }
+
+  Future<void> _loadInitialPosts() async {
+    // Simulate loading initial posts
+    final initialPosts = List.generate(30, (index) => 'post_$index');
+    setState(() {
+      _posts = initialPosts;
+    });
+  }
+
+  Future<void> _loadMorePosts() async {
+    if (_isLoadingMore || !_hasMorePosts) return;
+
+    setState(() => _isLoadingMore = true);
+
+    try {
+      // Simulate API call delay
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Simulate loading more posts
+      final newPosts = List.generate(
+        _pageSize,
+        (index) => 'post_${_posts.length + index}',
+      );
+
+      if (newPosts.length < _pageSize) {
+        _hasMorePosts = false;
+      }
+
+      setState(() {
+        _posts.addAll(newPosts);
+        _currentPage++;
+      });
+    } catch (e) {
+      // Handle error
+    } finally {
+      setState(() => _isLoadingMore = false);
+    }
   }
 
   @override
@@ -40,26 +93,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         final authState = ref.watch(authNotifierProvider);
 
         if (authState.user == null) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         final user = authState.user!;
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text(
-              'Profile',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.settings),
-                onPressed: () => context.push('/settings'),
+        return SafeArea(
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text(
+                'Profile',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-            ],
-          ),
-          body: SafeArea(
-            child: SingleChildScrollView(
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () => context.push('/settings'),
+                ),
+              ],
+            ),
+            body: SingleChildScrollView(
               child: Column(
                 children: [
                   // Profile Header
@@ -85,13 +140,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Widget _buildProfileHeader(BuildContext context, UserModel user) {
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingLarge),
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Avatar
           Stack(
             children: [
               CircleAvatar(
-                radius: 50,
+                radius: 40,
                 backgroundColor: Colors.grey[300],
                 backgroundImage: user.avatar != null
                     ? NetworkImage(user.avatar!)
@@ -120,42 +176,54 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             ],
           ),
 
-          const SizedBox(height: AppSizes.paddingMedium),
+          const SizedBox(width: AppSizes.paddingMedium),
 
-          // Name and Username
-          Text(
-            user.username,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-
-          if (user.bio != null && user.bio!.isNotEmpty) ...[
-            const SizedBox(height: AppSizes.paddingSmall),
-            Text(
-              user.bio!,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            ),
-          ],
-
-          if (user.website != null && user.website!.isNotEmpty) ...[
-            const SizedBox(height: AppSizes.paddingSmall),
-            GestureDetector(
-              onTap: () {
-                // In a real app we would use url_launcher
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Opening ${user.website}...')),
-                );
-              },
-              child: Text(
-                user.website!,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.blue,
-                  decoration: TextDecoration.underline,
+          // Name, Username, Bio, and Website
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Username
+                Text(
+                  user.username,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
+
+                // Bio
+                if (user.bio != null && user.bio!.isNotEmpty) ...[
+                  const SizedBox(height: AppSizes.paddingSmall),
+                  Text(
+                    user.bio!,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                ],
+
+                // Website
+                if (user.website != null && user.website!.isNotEmpty) ...[
+                  const SizedBox(height: AppSizes.paddingSmall),
+                  GestureDetector(
+                    onTap: () {
+                      // In a real app we would use url_launcher
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Opening ${user.website}...')),
+                      );
+                    },
+                    child: Text(
+                      user.website!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.blue,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -168,18 +236,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildStatItem(context, 'Posts', user.postsCount.toString(), null),
-          _buildStatItem(context, 'Followers', user.followersCount.toString(), () {
-            context.push('/profile/${user.id}/followers');
-          }),
-          _buildStatItem(context, 'Following', user.followingCount.toString(), () {
-            context.push('/profile/${user.id}/following');
-          }),
+          _buildStatItem(
+            context,
+            'Followers',
+            user.followersCount.toString(),
+            () {
+              context.push('/profile/${user.id}/followers');
+            },
+          ),
+          _buildStatItem(
+            context,
+            'Following',
+            user.followingCount.toString(),
+            () {
+              context.push('/profile/${user.id}/following');
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(BuildContext context, String label, String value, VoidCallback? onTap) {
+  Widget _buildStatItem(
+    BuildContext context,
+    String label,
+    String value,
+    VoidCallback? onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       child: Column(
@@ -296,9 +379,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   Widget _buildPostsGrid() {
-    // Mock posts data
-    final posts = List.generate(12, (index) => 'Post ${index + 1}');
-
     return Column(
       children: [
         // Tab Bar
@@ -333,32 +413,67 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           ),
         ),
 
-        // Posts Grid
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 2,
-            mainAxisSpacing: 2,
-          ),
-          itemCount: posts.length,
-          itemBuilder: (context, index) {
-            return Container(
-              color: Colors.grey[300],
-              child: Image.network(
-                'https://picsum.photos/200/200?random=$index',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.image, color: Colors.grey),
+        // Posts Grid with Lazy Loading
+        SizedBox(
+          height: 400, // Fixed height for the grid
+          child: GridView.builder(
+            controller: _scrollController,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 2,
+              mainAxisSpacing: 2,
+            ),
+            itemCount: _posts.length + (_isLoadingMore ? 1 : 0),
+            itemBuilder: (context, index) {
+              // Show loading indicator at the end
+              if (index == _posts.length) {
+                return Container(
+                  color: Colors.grey[100],
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                );
+              }
+
+              final postId = _posts[index];
+              return GestureDetector(
+                onTap: () {
+                  // Navigate to post detail
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Opening post: $postId')),
                   );
                 },
-              ),
-            );
-          },
+                child: Container(
+                  color: Colors.grey[300],
+                  child: Image.network(
+                    'https://picsum.photos/200/200?random=${index % 1000}',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.image, color: Colors.grey),
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
         ),
+
+        // Load More Button (if more posts available)
+        if (_hasMorePosts && !_isLoadingMore)
+          Padding(
+            padding: const EdgeInsets.all(AppSizes.paddingMedium),
+            child: ElevatedButton(
+              onPressed: _loadMorePosts,
+              child: const Text('Load More Posts'),
+            ),
+          ),
       ],
     );
   }

@@ -85,13 +85,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile updated successfully!')),
         );
-        context.pop(); // Go back instead of home
+        // Use a post-frame callback to ensure navigation happens after build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && context.mounted) {
+            context.pop(); // Go back instead of home
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating profile: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error updating profile: $e')));
       }
     } finally {
       if (mounted) {
@@ -104,268 +109,287 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(authNotifierProvider).user;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text('Edit Profile'),
-        actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _saveProfile,
-            child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text(
-                    'Done',
-                    style: TextStyle(color: Colors.blue),
-                  ),
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              // Check if we can pop before attempting to pop
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                // If we can't pop, navigate to home/main screen
+                context.go('/');
+              }
+            },
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSizes.paddingMedium),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              // Profile Picture Section
-              Center(
-                child: Column(
-                  children: [
-                    Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.grey[300],
-                          backgroundImage: _selectedAvatar != null
-                              ? FileImage(_selectedAvatar!)
-                              : (user?.avatar != null
-                                  ? NetworkImage(user!.avatar!)
-                                  : null) as ImageProvider<Object>?,
-                          child: (_selectedAvatar == null && user?.avatar == null)
-                              ? const Icon(
-                                  Icons.person,
-                                  size: 50,
-                                  color: Colors.grey,
-                                )
-                              : null,
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.blue,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.camera_alt,
-                                color: Colors.white,
-                                size: 16,
+          title: const Text('Edit Profile'),
+          actions: [
+            TextButton(
+              onPressed: _isLoading ? null : _saveProfile,
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Done', style: TextStyle(color: Colors.blue)),
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSizes.paddingMedium),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                // Profile Picture Section
+                Center(
+                  child: Column(
+                    children: [
+                      Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 50,
+                            backgroundColor: Colors.grey[300],
+                            backgroundImage: _selectedAvatar != null
+                                ? FileImage(_selectedAvatar!)
+                                : (user?.avatar != null
+                                          ? NetworkImage(user!.avatar!)
+                                          : null)
+                                      as ImageProvider<Object>?,
+                            child:
+                                (_selectedAvatar == null &&
+                                    user?.avatar == null)
+                                ? const Icon(
+                                    Icons.person,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  )
+                                : null,
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
                               ),
-                              onPressed: _pickAvatar,
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.camera_alt,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                onPressed: _pickAvatar,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSizes.paddingMedium),
-                    TextButton(
-                      onPressed: _pickAvatar,
-                      child: const Text(
-                        'Change Profile Photo',
-                        style: TextStyle(color: Colors.blue),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: AppSizes.paddingMedium),
+                      TextButton(
+                        onPressed: _pickAvatar,
+                        child: const Text(
+                          'Change Profile Photo',
+                          style: TextStyle(color: Colors.blue),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: AppSizes.paddingLarge),
+                const SizedBox(height: AppSizes.paddingLarge),
 
-              // Form Fields
-              TextFormField(
-                controller: _usernameController,
-                decoration: const InputDecoration(
-                  labelText: 'Username',
-                  hintText: 'Enter your username',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a username';
-                  }
-                  if (value.length < 3) {
-                    return 'Username must be at least 3 characters';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: AppSizes.paddingMedium),
-
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'Enter your email',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: AppSizes.paddingMedium),
-
-              TextFormField(
-                controller: _bioController,
-                maxLines: 3,
-                maxLength: 150,
-                decoration: const InputDecoration(
-                  labelText: 'Bio',
-                  hintText: 'Tell us about yourself',
-                  alignLabelWithHint: true,
-                ),
-                validator: (value) {
-                  if (value != null && value.length > 150) {
-                    return 'Bio must be less than 150 characters';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: AppSizes.paddingMedium),
-
-              TextFormField(
-                controller: _websiteController,
-                keyboardType: TextInputType.url,
-                decoration: const InputDecoration(
-                  labelText: 'Website',
-                  hintText: 'https://yourwebsite.com',
-                ),
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    // Basic URL validation
-                    final urlPattern = r'^https?://[^\s/$.?#].[^\s]*$';
-                    final regExp = RegExp(urlPattern);
-                    if (!regExp.hasMatch(value)) {
-                      return 'Please enter a valid URL';
+                // Form Fields
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Username',
+                    hintText: 'Enter your username',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a username';
                     }
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: AppSizes.paddingLarge),
-
-              // Privacy Settings
-              Container(
-                padding: const EdgeInsets.all(AppSizes.paddingMedium),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+                    if (value.length < 3) {
+                      return 'Username must be at least 3 characters';
+                    }
+                    return null;
+                  },
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Privacy',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: AppSizes.paddingMedium),
-                    SwitchListTile(
-                      title: const Text('Private Account'),
-                      subtitle: const Text('Only approved followers can see your posts'),
-                      value: false, // This would come from user settings
-                      onChanged: (value) {
-                        // Update privacy setting
-                      },
-                    ),
-                  ],
-                ),
-              ),
 
-              const SizedBox(height: AppSizes.paddingLarge),
+                const SizedBox(height: AppSizes.paddingMedium),
 
-              // Danger Zone
-              Container(
-                padding: const EdgeInsets.all(AppSizes.paddingMedium),
-                decoration: BoxDecoration(
-                  color: Colors.red[50],
-                  borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
-                  border: Border.all(color: Colors.red[200]!),
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    hintText: 'Enter your email',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Danger Zone',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red,
-                      ),
+
+                const SizedBox(height: AppSizes.paddingMedium),
+
+                TextFormField(
+                  controller: _bioController,
+                  maxLines: 3,
+                  maxLength: 150,
+                  decoration: const InputDecoration(
+                    labelText: 'Bio',
+                    hintText: 'Tell us about yourself',
+                    alignLabelWithHint: true,
+                  ),
+                  validator: (value) {
+                    if (value != null && value.length > 150) {
+                      return 'Bio must be less than 150 characters';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: AppSizes.paddingMedium),
+
+                TextFormField(
+                  controller: _websiteController,
+                  keyboardType: TextInputType.url,
+                  decoration: const InputDecoration(
+                    labelText: 'Website',
+                    hintText: 'https://yourwebsite.com',
+                  ),
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      // Basic URL validation
+                      final urlPattern = r'^https?://[^\s/$.?#].[^\s]*$';
+                      final regExp = RegExp(urlPattern);
+                      if (!regExp.hasMatch(value)) {
+                        return 'Please enter a valid URL';
+                      }
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: AppSizes.paddingLarge),
+
+                // Privacy Settings
+                Container(
+                  padding: const EdgeInsets.all(AppSizes.paddingMedium),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(
+                      AppSizes.borderRadiusMedium,
                     ),
-                    const SizedBox(height: AppSizes.paddingMedium),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          // Show confirmation dialog for account deletion
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Delete Account'),
-                              content: const Text(
-                                'Are you sure you want to delete your account? This action cannot be undone.',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    // Handle account deletion
-                                  },
-                                  child: const Text(
-                                    'Delete',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.red),
-                          foregroundColor: Colors.red,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Privacy',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
-                        child: const Text('Delete Account'),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: AppSizes.paddingMedium),
+                      SwitchListTile(
+                        title: const Text('Private Account'),
+                        subtitle: const Text(
+                          'Only approved followers can see your posts',
+                        ),
+                        value: false, // This would come from user settings
+                        onChanged: (value) {
+                          // Update privacy setting
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: AppSizes.paddingLarge),
+
+                // Danger Zone
+                Container(
+                  padding: const EdgeInsets.all(AppSizes.paddingMedium),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(
+                      AppSizes.borderRadiusMedium,
+                    ),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Danger Zone',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                      const SizedBox(height: AppSizes.paddingMedium),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            // Show confirmation dialog for account deletion
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Delete Account'),
+                                content: const Text(
+                                  'Are you sure you want to delete your account? This action cannot be undone.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      // Handle account deletion
+                                    },
+                                    child: const Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.red),
+                            foregroundColor: Colors.red,
+                          ),
+                          child: const Text('Delete Account'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

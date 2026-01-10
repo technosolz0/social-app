@@ -1,4 +1,5 @@
 import json
+from core.encryption_middleware import EncryptionMiddleware
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from datetime import datetime
@@ -45,16 +46,44 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
         )
 
-    async def receive(self, text_data):
-        data = json.loads(text_data)
-        message_type = data.get('type', 'message')
 
-        if message_type == 'message':
-            await self.handle_message(data)
-        elif message_type == 'typing':
-            await self.handle_typing(data)
-        elif message_type == 'read_receipt':
-            await self.handle_read_receipt(data)
+    async def receive(self, text_data):
+        # Decrypt if encrypted payload
+        try:
+            data_json = json.loads(text_data)
+            if 'payload' in data_json:
+                middleware = EncryptionMiddleware()
+                # Run sync decryption
+                decrypted_text = middleware.decrypt(data_json['payload'])
+                if decrypted_text:
+                    text_data = decrypted_text
+        except:
+            pass
+            
+        try:
+            data = json.loads(text_data)
+            message_type = data.get('type', 'message')
+
+            if message_type == 'message':
+                await self.handle_message(data)
+            elif message_type == 'typing':
+                await self.handle_typing(data)
+            elif message_type == 'read_receipt':
+                await self.handle_read_receipt(data)
+        except json.JSONDecodeError:
+            pass
+
+    async def send(self, text_data=None, bytes_data=None, close=False):
+        if text_data:
+            try:
+                # Encrypt outgoing
+                middleware = EncryptionMiddleware()
+                encrypted = middleware.encrypt(text_data)
+                text_data = json.dumps({'payload': encrypted})
+            except Exception as e:
+                print(f"WS Encryption failed: {e}")
+                
+        await super().send(text_data=text_data, bytes_data=bytes_data, close=close)
 
     async def handle_message(self, data):
         """Handle new message"""

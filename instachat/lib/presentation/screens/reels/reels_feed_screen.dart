@@ -38,8 +38,8 @@ class _ReelsFeedScreenState extends ConsumerState<ReelsFeedScreen> {
         method: 'GET',
         path: '/reels/',
       );
-      
-      final List<dynamic> data = response.data['results'] ?? response.data;
+
+      final data = response.data is List ? response.data : (response.data['results'] ?? []);
       final reels = data.map((json) => PostModel.fromJson(json)).toList();
       
       if (mounted) {

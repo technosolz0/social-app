@@ -14,15 +14,24 @@ class FirebaseService {
 
   Future<void> init() async {
     try {
-      // Initialize Firebase Core
+      // Initialize Firebase Core with explicit options
       try {
-        await Firebase.initializeApp();
+        await Firebase.initializeApp(
+          options: const FirebaseOptions(
+            apiKey: 'AIzaSyAfFLUysoo1E-5yU2FYfGyV347TdymUM2Y',
+            appId: '1:41446007568:android:62ff587cb6d8bab89fbb95',
+            messagingSenderId: '41446007568',
+            projectId: 'instachat-6cea0',
+            storageBucket: 'instachat-6cea0.firebasestorage.app',
+            databaseURL: 'https://instachat-6cea0-default-rtdb.firebaseio.com',
+          ),
+        );
         if (kDebugMode) {
           print('🔥 Firebase initialized successfully');
         }
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ Firebase initialization failed (check google-services.json): $e');
+          print('⚠️ Firebase initialization failed: $e');
         }
         return; // Stop initialization if Firebase Core fails
       }
@@ -98,14 +107,10 @@ class FirebaseService {
   Future<void> _sendTokenToBackend(String token) async {
     try {
       final apiService = ApiService();
-      await apiService.customRequest(
-        method: 'POST',
-        path: '/notifications/api/push-tokens/register/',
-        data: {
-          'token': token,
-          'device_type': 'android', // You might want to detect platform
-          'device_id': '', // You might want to generate a unique device ID
-        },
+      await apiService.registerPushToken(
+        token: token,
+        deviceType: 'android', // You might want to detect platform
+        deviceId: '', // You might want to generate a unique device ID
       );
       if (kDebugMode) {
         print('✅ FCM Token sent to backend');

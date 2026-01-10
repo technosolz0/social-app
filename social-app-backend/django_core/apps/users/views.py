@@ -33,6 +33,23 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserDetailSerializer
         return UserSerializer
 
+    def create(self, request, *args, **kwargs):
+        """Override create to register device token during registration"""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        # Register device token if provided
+        self._register_device_token(user, request.data)
+
+        # Return response with tokens
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': UserSerializer(user).data
+        }, status=status.HTTP_201_CREATED)
+
     @extend_schema(
         summary="User Login",
         description="Simple login with username/email and password. Returns JWT tokens.",
@@ -118,6 +135,9 @@ class UserViewSet(viewsets.ModelViewSet):
                     user.is_verified = True
                     user.save()
 
+            # Register device token if provided
+            self._register_device_token(user, request.data)
+
             refresh = RefreshToken.for_user(user)
             return Response({
                 'access': str(refresh.access_token),
@@ -130,11 +150,47 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_401_UNAUTHORIZED
         )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get', 'patch', 'put'])
     def me(self, request):
-        """Get current user profile"""
-        serializer = UserDetailSerializer(request.user)
-        return Response(serializer.data)
+        """Get or update current user profile"""
+        if request.method == 'GET':
+            serializer = UserDetailSerializer(request.user)
+            return Response(serializer.data)
+        elif request.method in ['PATCH', 'PUT']:
+            # Handle partial updates for both user and profile
+            user_data = {}
+            profile_data = {}
+
+            # Separate user fields from profile fields
+            user_fields = ['username', 'email']
+            for field in user_fields:
+                if field in request.data:
+                    user_data[field] = request.data[field]
+
+            # Remaining fields go to profile
+            for key, value in request.data.items():
+                if key not in user_fields:
+                    profile_data[key] = value
+
+            # Update user if there are user fields
+            if user_data:
+                user_serializer = UserDetailSerializer(request.user, data=user_data, partial=True)
+                if user_serializer.is_valid():
+                    user_serializer.save()
+                else:
+                    return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            # Update profile if there are profile fields
+            if profile_data:
+                profile_serializer = UserProfileSerializer(request.user.profile, data=profile_data, partial=True)
+                if profile_serializer.is_valid():
+                    profile_serializer.save()
+                else:
+                    return Response(profile_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            # Return updated user data
+            serializer = UserDetailSerializer(request.user)
+            return Response(serializer.data)
 
     @action(detail=False, methods=['patch'])
     def update_profile(self, request):
@@ -360,3 +416,30 @@ class UserViewSet(viewsets.ModelViewSet):
             {'message': 'Password reset successfully'},
             status=status.HTTP_200_OK
         )
+
+    def _register_device_token(self, user, data):
+        """Helper method to register device token during login/registration"""
+        token = data.get('device_token')
+        device_type = data.get('device_type', 'android')
+        device_id = data.get('device_id', '')
+        app_version = data.get('app_version', '')
+        os_version = data.get('os_version', '')
+
+        if token:
+            try:
+                from apps.notifications.models import PushToken
+                # Create or update push token
+                PushToken.objects.update_or_create(
+                    user=user,
+                    device_id=device_id or token[:50],  # Use part of token as device_id if not provided
+                    defaults={
+                        'token': token,
+                        'device_type': device_type,
+                        'is_active': True,
+                        'app_version': app_version,
+                        'os_version': os_version,
+                    }
+                )
+            except Exception as e:
+                # Log error but don't fail the login/registration
+                print(f"Failed to register device token: {e}")

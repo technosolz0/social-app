@@ -30,7 +30,7 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
     // Mock HLS stream (Big Buck Bunny or similar)
     const mockUrl =
         'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8';
-    
+
     _videoController = VideoPlayerController.networkUrl(Uri.parse(mockUrl));
 
     try {
@@ -78,14 +78,17 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
         children: [
           // Video Player
           Center(
-            child: _isError 
-            ? const Text('Stream not available', style: TextStyle(color: Colors.white))
-            : _isPlaying
-              ? AspectRatio(
-                  aspectRatio: _videoController.value.aspectRatio,
-                  child: VideoPlayer(_videoController),
-                )
-              : const CircularProgressIndicator(),
+            child: _isError
+                ? const Text(
+                    'Stream not available',
+                    style: TextStyle(color: Colors.white),
+                  )
+                : _isPlaying
+                ? AspectRatio(
+                    aspectRatio: _videoController.value.aspectRatio,
+                    child: VideoPlayer(_videoController),
+                  )
+                : const CircularProgressIndicator(),
           ),
 
           // Gradient Overlay
@@ -106,24 +109,32 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                   const CircleAvatar(
-                    backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=3'),
+                  const CircleAvatar(
+                    backgroundImage: NetworkImage(
+                      'https://i.pravatar.cc/150?img=3',
+                    ),
                     radius: 18,
-                   ),
-                   const SizedBox(width: 8),
-                   const Column(
+                  ),
+                  const SizedBox(width: 8),
+                  const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('StreamerUser', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      Text(
+                        'StreamerUser',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       ViewCountBadge(),
                     ],
-                   ),
-                   const Spacer(),
-                   IconButton(
+                  ),
+                  const Spacer(),
+                  IconButton(
                     icon: const Icon(Icons.close, color: Colors.white),
                     onPressed: () => context.pop(),
-                   ),
+                  ),
                 ],
               ),
             ),
@@ -144,7 +155,8 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                   SizedBox(
                     height: 200,
                     child: ListView.builder(
-                      reverse: true, // Show newest at bottom? List usually grows down.
+                      reverse:
+                          true, // Show newest at bottom? List usually grows down.
                       // Let's keep normal order, stick to bottom.
                       itemCount: _comments.length,
                       itemBuilder: (context, index) {
@@ -153,7 +165,13 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Text(
                             comment,
-                            style: const TextStyle(color: Colors.white, fontSize: 14, shadows: [Shadow(blurRadius: 2, color: Colors.black)]),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              shadows: [
+                                Shadow(blurRadius: 2, color: Colors.black),
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -175,8 +193,10 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                               borderSide: BorderSide.none,
                             ),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.3),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                            fillColor: Colors.white.withValues(alpha: 0.3),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                            ),
                           ),
                           onSubmitted: (_) => _sendComment(),
                         ),
@@ -185,10 +205,10 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                       IconButton(
                         icon: const Icon(Icons.favorite, color: Colors.red),
                         onPressed: () {
-                           // Mock Like Animation
+                          // Mock Like Animation
                         },
                       ),
-                       IconButton(
+                      IconButton(
                         icon: const Icon(Icons.send, color: Colors.white),
                         onPressed: _sendComment,
                       ),
@@ -222,7 +242,11 @@ class ViewCountBadge extends StatelessWidget {
           SizedBox(width: 4),
           Text(
             '1.2k',
-            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),

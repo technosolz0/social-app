@@ -22,6 +22,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Encryption
+from middleware.encryption import EncryptionMiddleware
+app.add_middleware(EncryptionMiddleware)
+
 # Include routers
 app.include_router(feed.router, prefix="/feed", tags=["feed"])
 app.include_router(recommendations.router, prefix="/recommendations", tags=["recommendations"])

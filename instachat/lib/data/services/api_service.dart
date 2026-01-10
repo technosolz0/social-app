@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -9,6 +8,7 @@ import '../models/activity_model.dart';
 import '../models/notification_model.dart';
 import '../services/local_storage_service.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/security/encryption_service.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
@@ -36,6 +36,7 @@ class ApiService {
       _csrfInterceptor(),
       _authInterceptor(),
       _loggingInterceptor(),
+      _encryptionInterceptor(),
       _errorInterceptor(),
     ]);
   }
@@ -118,6 +119,55 @@ class ApiService {
           }
         }
         return handler.next(error);
+      },
+    );
+  }
+
+  Interceptor _encryptionInterceptor() {
+    return InterceptorsWrapper(
+      onRequest: (options, handler) {
+        // Skip encryption for FormData (file uploads)
+        if (options.data is FormData) {
+          return handler.next(options);
+        }
+
+        // Check if already encrypted (to prevent double encryption on retry)
+        if (options.extra['encrypted'] == true) {
+          return handler.next(options);
+        }
+
+        if (options.data != null) {
+          try {
+            final encrypted = EncryptionService.encryptData(options.data);
+            options.data = {'payload': encrypted};
+            options.extra['encrypted'] = true; // Mark as encrypted
+
+            if (kDebugMode) {
+              print('🔒 Encrypted request payload');
+            }
+          } catch (e) {
+            print('Encryption failed: $e');
+          }
+        }
+        return handler.next(options);
+      },
+      onResponse: (response, handler) {
+        if (response.data is Map && response.data.containsKey('payload')) {
+          try {
+            final decrypted = EncryptionService.decryptData(
+              response.data['payload'],
+            );
+            if (decrypted != null) {
+              response.data = decrypted;
+              if (kDebugMode) {
+                print('🔓 Decrypted response payload');
+              }
+            }
+          } catch (e) {
+            print('Decryption failed: $e');
+          }
+        }
+        return handler.next(response);
       },
     );
   }
@@ -274,12 +324,75 @@ class ApiService {
   // ===========================================================================
 
   Future<List<PostModel>> getFeed({int page = 1, int limit = 20}) async {
-    final response = await _dio.get(
-      ApiConstants.feed,
-      queryParameters: {'page': page, 'limit': limit},
-    );
-    final List<dynamic> data = response.data['results'] ?? response.data;
-    return data.map((json) => PostModel.fromJson(json)).toList();
+    try {
+      if (kDebugMode) {
+        print('🌐 Fetching feed: page=$page, limit=$limit');
+      }
+
+      final response = await _dio.get(
+        ApiConstants.feed,
+        queryParameters: {'page': page, 'limit': limit},
+      );
+
+      if (kDebugMode) {
+        print('📥 Raw feed response data type: ${response.data.runtimeType}');
+        print('📥 Raw feed response data: ${response.data}');
+      }
+
+      // Handle different response structures
+      List<dynamic> data;
+      if (response.data is List) {
+        data = response.data as List<dynamic>;
+      } else if (response.data is Map && response.data.containsKey('results')) {
+        data = response.data['results'] as List<dynamic>;
+      } else if (response.data is Map && response.data.containsKey('data')) {
+        final nestedData = response.data['data'];
+        data = nestedData is List ? nestedData : [];
+      } else {
+        data = [];
+      }
+
+      if (kDebugMode) {
+        print('📋 Extracted data list length: ${data.length}');
+        if (data.isNotEmpty) {
+          print('📋 First item type: ${data.first.runtimeType}');
+          print('📋 First item: ${data.first}');
+        }
+      }
+
+      // Convert to PostModel with error handling
+      final posts = <PostModel>[];
+      for (var i = 0; i < data.length; i++) {
+        try {
+          final item = data[i];
+          if (item is Map<String, dynamic>) {
+            final post = PostModel.fromJson(item);
+            posts.add(post);
+          } else {
+            if (kDebugMode) {
+              print('⚠️ Skipping invalid post data at index $i: $item');
+            }
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('❌ Failed to parse post at index $i: $e');
+          }
+          // Continue with other posts
+        }
+      }
+
+      if (kDebugMode) {
+        print('✅ Successfully parsed ${posts.length} posts');
+      }
+
+      return posts;
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('❌ Feed fetch failed: $e');
+        print('❌ Stack trace: $stackTrace');
+      }
+      rethrow;
+    }
   }
 
   Future<List<PostModel>> getTrendingPosts({
@@ -290,7 +403,9 @@ class ApiService {
       ApiConstants.trending,
       queryParameters: {'page': page, 'limit': limit},
     );
-    final List<dynamic> data = response.data['results'] ?? response.data;
+    final data = response.data is List
+        ? response.data
+        : (response.data['results'] ?? []);
     return data.map((json) => PostModel.fromJson(json)).toList();
   }
 
@@ -442,7 +557,11 @@ class ApiService {
       ApiConstants.postComments(postId),
       queryParameters: {'page': page},
     );
-    return response.data['results'] ?? response.data;
+    if (response.data is List) {
+      return response.data;
+    } else {
+      return response.data['results'] ?? [];
+    }
   }
 
   Future<Map<String, dynamic>> addComment(
@@ -474,7 +593,11 @@ class ApiService {
       ApiConstants.conversations,
       queryParameters: {'page': page},
     );
-    return response.data['results'] ?? response.data;
+    if (response.data is List) {
+      return response.data;
+    } else {
+      return response.data['results'] ?? [];
+    }
   }
 
   Future<dynamic> getConversationById(String conversationId) async {
@@ -673,6 +796,7 @@ class ApiService {
     final options = Options(
       method: requestOptions.method,
       headers: requestOptions.headers,
+      extra: requestOptions.extra, // Preserve extra (flags)
     );
 
     // Update auth header with new token

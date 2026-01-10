@@ -17,22 +17,19 @@ abstract class AppException implements Exception {
 
 /// Authentication exceptions
 class AuthException extends AppException {
-  const AuthException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const AuthException(super.message, {super.code, super.data});
 }
 
 /// Network exceptions
 class NetworkException extends AppException {
-  const NetworkException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const NetworkException(super.message, {super.code, super.data});
 }
 
 /// API exceptions
 class ApiException extends AppException {
   final int? statusCode;
 
-  const ApiException(String message, {this.statusCode, String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const ApiException(super.message, {this.statusCode, super.code, super.data});
 
   @override
   String toString() => 'ApiException: $message${statusCode != null ? ' (Status: $statusCode)' : ''}${code != null ? ' (Code: $code)' : ''}';
@@ -40,70 +37,59 @@ class ApiException extends AppException {
 
 /// Database exceptions
 class DatabaseException extends AppException {
-  const DatabaseException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const DatabaseException(super.message, {super.code, super.data});
 }
 
 /// Cache exceptions
 class CacheException extends AppException {
-  const CacheException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const CacheException(super.message, {super.code, super.data});
 }
 
 /// Storage exceptions
 class StorageException extends AppException {
-  const StorageException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const StorageException(super.message, {super.code, super.data});
 }
 
 /// Validation exceptions
 class ValidationException extends AppException {
-  const ValidationException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const ValidationException(super.message, {super.code, super.data});
 }
 
 /// Permission exceptions
 class PermissionException extends AppException {
-  const PermissionException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const PermissionException(super.message, {super.code, super.data});
 }
 
 /// File exceptions
 class FileException extends AppException {
-  const FileException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const FileException(super.message, {super.code, super.data});
 }
 
 /// Location exceptions
 class LocationException extends AppException {
-  const LocationException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const LocationException(super.message, {super.code, super.data});
 }
 
 /// Camera exceptions
 class CameraException extends AppException {
-  const CameraException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const CameraException(super.message, {super.code, super.data});
 }
 
 /// Notification exceptions
 class NotificationException extends AppException {
-  const NotificationException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const NotificationException(super.message, {super.code, super.data});
 }
 
 /// Payment exceptions
 class PaymentException extends AppException {
-  const PaymentException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const PaymentException(super.message, {super.code, super.data});
 }
 
 /// Rate limit exceptions
 class RateLimitException extends AppException {
   final int retryAfterSeconds;
 
-  const RateLimitException(String message, this.retryAfterSeconds, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const RateLimitException(super.message, this.retryAfterSeconds, {super.code, super.data});
 
   @override
   String toString() => 'RateLimitException: $message (Retry after: $retryAfterSeconds seconds)${code != null ? ' (Code: $code)' : ''}';
@@ -111,26 +97,22 @@ class RateLimitException extends AppException {
 
 /// Timeout exceptions
 class TimeoutException extends AppException {
-  const TimeoutException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const TimeoutException(super.message, {super.code, super.data});
 }
 
 /// Serialization exceptions
 class SerializationException extends AppException {
-  const SerializationException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const SerializationException(super.message, {super.code, super.data});
 }
 
 /// Configuration exceptions
 class ConfigurationException extends AppException {
-  const ConfigurationException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const ConfigurationException(super.message, {super.code, super.data});
 }
 
 /// Unknown exceptions
 class UnknownException extends AppException {
-  const UnknownException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const UnknownException(super.message, {super.code, super.data});
 }
 
 /// Custom exception for when a feature is not implemented
@@ -141,8 +123,7 @@ class NotImplementedException extends AppException {
 
 /// Custom exception for invalid arguments
 class InvalidArgumentException extends AppException {
-  const InvalidArgumentException(String message, {String? code, dynamic data})
-      : super(message, code: code, data: data);
+  const InvalidArgumentException(super.message, {super.code, super.data});
 }
 
 /// Custom exception for when a resource is not found
@@ -153,14 +134,14 @@ class NotFoundException extends AppException {
 
 /// Custom exception for when user is not authorized
 class UnauthorizedException extends AppException {
-  const UnauthorizedException(String message)
-      : super(message, code: 'UNAUTHORIZED');
+  const UnauthorizedException(super.message)
+      : super(code: 'UNAUTHORIZED');
 }
 
 /// Custom exception for when user is forbidden from accessing a resource
 class ForbiddenException extends AppException {
-  const ForbiddenException(String message)
-      : super(message, code: 'FORBIDDEN');
+  const ForbiddenException(super.message)
+      : super(code: 'FORBIDDEN');
 }
 
 /// Custom exception for when a resource already exists

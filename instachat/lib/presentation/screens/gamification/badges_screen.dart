@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/theme_constants.dart';
 import '../../../data/models/gamification_model.dart';
@@ -15,7 +16,7 @@ class BadgesScreen extends ConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         title: const Text('Badges'),
         actions: [
@@ -58,7 +59,10 @@ class BadgesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBadgesContent(BuildContext context, GamificationModel gamification) {
+  Widget _buildBadgesContent(
+    BuildContext context,
+    GamificationModel gamification,
+  ) {
     if (gamification.badges.isEmpty) {
       return Center(
         child: Column(
@@ -81,15 +85,12 @@ class BadgesScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             Text(
               'Complete challenges to earn your first badge!',
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[500], fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => Navigator.pushNamed(context, '/quests'),
+              onPressed: () => context.push('/quests'),
               icon: const Icon(Icons.flag),
               label: const Text('View Challenges'),
             ),
@@ -101,7 +102,8 @@ class BadgesScreen extends ConsumerWidget {
     // Group badges by rarity
     final badgesByRarity = <String, List<BadgeModel>>{};
     for (final badge in gamification.badges) {
-      badgesByRarity[badge.rarity] = (badgesByRarity[badge.rarity] ?? [])..add(badge);
+      badgesByRarity[badge.rarity] = (badgesByRarity[badge.rarity] ?? [])
+        ..add(badge);
     }
 
     return ListView(
@@ -120,11 +122,7 @@ class BadgesScreen extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              const Icon(
-                Icons.emoji_events,
-                color: Colors.white,
-                size: 32,
-              ),
+              const Icon(Icons.emoji_events, color: Colors.white, size: 32),
               const SizedBox(width: AppSizes.paddingMedium),
               Expanded(
                 child: Column(
@@ -141,7 +139,7 @@ class BadgesScreen extends ConsumerWidget {
                     Text(
                       'Keep completing challenges!',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         fontSize: 14,
                       ),
                     ),
@@ -160,7 +158,9 @@ class BadgesScreen extends ConsumerWidget {
     );
   }
 
-  List<Widget> _buildRaritySections(Map<String, List<BadgeModel>> badgesByRarity) {
+  List<Widget> _buildRaritySections(
+    Map<String, List<BadgeModel>> badgesByRarity,
+  ) {
     final rarities = ['legendary', 'epic', 'rare', 'common'];
     final widgets = <Widget>[];
 
@@ -226,10 +226,10 @@ class BadgesScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
-          border: Border.all(color: rarityColor.withOpacity(0.3)),
+          border: Border.all(color: rarityColor.withValues(alpha: 0.3)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -243,7 +243,7 @@ class BadgesScreen extends ConsumerWidget {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: rarityColor.withOpacity(0.1),
+                color: rarityColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
                 border: Border.all(color: rarityColor, width: 2),
               ),
@@ -259,10 +259,7 @@ class BadgesScreen extends ConsumerWidget {
             // Badge name
             Text(
               badge.name,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -273,10 +270,7 @@ class BadgesScreen extends ConsumerWidget {
             // Earned date
             Text(
               _formatDate(badge.earnedAt),
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -369,7 +363,7 @@ class BadgesScreen extends ConsumerWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: rarityColor.withOpacity(0.1),
+                color: rarityColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
                 border: Border.all(color: rarityColor, width: 3),
               ),
@@ -385,10 +379,7 @@ class BadgesScreen extends ConsumerWidget {
             // Badge name
             Text(
               badge.name,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
 
@@ -419,10 +410,7 @@ class BadgesScreen extends ConsumerWidget {
             // Earned date
             Text(
               'Earned on ${_formatDateLong(badge.earnedAt)}',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
 
             const SizedBox(height: AppSizes.paddingMedium),
@@ -437,7 +425,7 @@ class BadgesScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: const Text('Close'),
           ),
         ],
@@ -447,8 +435,18 @@ class BadgesScreen extends ConsumerWidget {
 
   String _formatDateLong(DateTime date) {
     final months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
 
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
@@ -492,7 +490,7 @@ class BadgesScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: const Text('Got it'),
           ),
         ],

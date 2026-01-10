@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/theme_constants.dart';
 import '../../../data/models/user_model.dart';
@@ -16,17 +17,109 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _selectedTimeframe = 'all_time';
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoadingMore = false;
+  int _currentPage = 1;
+  final int _pageSize = 50;
+  List<Map<String, dynamic>> _allLeaderboardData = [];
+  bool _hasMoreData = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 500) {
+      _loadMoreLeaderboardData();
+    }
+  }
+
+  Future<void> _loadMoreLeaderboardData() async {
+    if (_isLoadingMore || !_hasMoreData) return;
+
+    setState(() => _isLoadingMore = true);
+
+    try {
+      // In a real app, you'd call an API with pagination
+      // For now, we'll simulate loading more data
+      final newData = await _fetchLeaderboardPage(
+        _currentPage + 1,
+        _selectedTimeframe,
+      );
+
+      if (newData.isEmpty) {
+        _hasMoreData = false;
+      } else {
+        setState(() {
+          _allLeaderboardData.addAll(newData);
+          _currentPage++;
+        });
+      }
+    } catch (e) {
+      // Handle error
+    } finally {
+      setState(() => _isLoadingMore = false);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchLeaderboardPage(
+    int page,
+    String timeframe,
+  ) async {
+    // Simulate API call with pagination
+    // In a real app, this would call your backend API
+    try {
+      final gamificationNotifier = ref.read(gamificationProvider.notifier);
+      final allData = await gamificationNotifier.getLeaderboard();
+
+      // Simulate pagination by returning chunks
+      final startIndex = (page - 1) * _pageSize;
+      final endIndex = startIndex + _pageSize;
+
+      if (startIndex >= allData.length) {
+        return [];
+      }
+
+      return allData.sublist(startIndex, endIndex.clamp(0, allData.length));
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<void> _refreshLeaderboard() async {
+    setState(() {
+      _currentPage = 1;
+      _allLeaderboardData = [];
+      _hasMoreData = true;
+      _isLoadingMore = false;
+    });
+
+    // Reload first page
+    final newData = await _fetchLeaderboardPage(1, _selectedTimeframe);
+    setState(() {
+      _allLeaderboardData = newData;
+    });
+  }
+
+  void _onTimeframeChanged(String timeframe) {
+    setState(() {
+      _selectedTimeframe = timeframe;
+      _currentPage = 1;
+      _allLeaderboardData = [];
+      _hasMoreData = true;
+    });
+    _refreshLeaderboard();
   }
 
   @override
@@ -38,7 +131,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         title: const Text('Leaderboard'),
         bottom: TabBar(
@@ -88,7 +181,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               ],
             ),
           ),
-          data: (leaderboard) => _buildLeaderboardContent(context, leaderboard, currentUser),
+          data: (leaderboard) =>
+              _buildLeaderboardContent(context, leaderboard, currentUser),
         ),
       ),
     );
@@ -104,11 +198,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.leaderboard_outlined,
-              size: 80,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.leaderboard_outlined, size: 80, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'No data available',
@@ -121,10 +211,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             const SizedBox(height: 8),
             Text(
               'Check back later for leaderboard updates!',
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[500], fontSize: 14),
               textAlign: TextAlign.center,
             ),
           ],
@@ -141,9 +228,15 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       children: [
         // Current user rank highlight (if in top 10 or current user)
         if (currentUserRank >= 0 && currentUserRank < 10)
-          _buildCurrentUserHighlight(leaderboard[currentUserRank], currentUserRank + 1)
+          _buildCurrentUserHighlight(
+            leaderboard[currentUserRank],
+            currentUserRank + 1,
+          )
         else if (currentUserRank >= 10)
-          _buildCurrentUserRankCard(leaderboard[currentUserRank], currentUserRank + 1),
+          _buildCurrentUserRankCard(
+            leaderboard[currentUserRank],
+            currentUserRank + 1,
+          ),
 
         // Top 3 podium
         if (leaderboard.length >= 3)
@@ -217,18 +310,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                 Text(
                   '${userData['points'] ?? 0} points',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 14,
                   ),
                 ),
               ],
             ),
           ),
-          const Icon(
-            Icons.emoji_events,
-            color: Colors.white,
-            size: 24,
-          ),
+          const Icon(Icons.emoji_events, color: Colors.white, size: 24),
         ],
       ),
     );
@@ -269,10 +358,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                 ),
                 Text(
                   '${userData['points'] ?? 0} points',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
                 ),
               ],
             ),
@@ -292,7 +378,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     );
   }
 
-  Widget _buildTopThreePodium(BuildContext context, List<Map<String, dynamic>> topThree) {
+  Widget _buildTopThreePodium(
+    BuildContext context,
+    List<Map<String, dynamic>> topThree,
+  ) {
     return Container(
       height: 200,
       margin: const EdgeInsets.symmetric(vertical: AppSizes.paddingMedium),
@@ -400,10 +489,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(8),
               ),
-              border: Border.all(
-                color: Colors.white,
-                width: 2,
-              ),
+              border: Border.all(color: Colors.white, width: 2),
             ),
             child: Center(
               child: Text(
@@ -494,16 +580,15 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                   entry['username'] ?? 'Unknown User',
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isCurrentUser
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                     color: isCurrentUser ? Colors.blue.shade700 : Colors.black,
                   ),
                 ),
                 Text(
                   '${entry['points'] ?? 0} points',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -511,11 +596,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
           // Trophy icon for top ranks
           if (rank <= 3)
-            Icon(
-              Icons.emoji_events,
-              color: _getRankColor(rank),
-              size: 24,
-            ),
+            Icon(Icons.emoji_events, color: _getRankColor(rank), size: 24),
         ],
       ),
     );
@@ -548,7 +629,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: const Text('Got it'),
           ),
         ],

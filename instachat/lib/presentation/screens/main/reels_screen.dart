@@ -67,7 +67,7 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
   Future<void> _initializeVideoController(PostModel reel) async {
     if (_videoControllers.containsKey(reel.id)) return;
 
-    final controller = VideoPlayerController.network(reel.mediaUrl ?? '');
+    final controller = VideoPlayerController.network(reel.mediaUrl);
     _videoControllers[reel.id] = controller;
 
     try {
@@ -133,18 +133,12 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
         elevation: 0,
         title: const Text(
           'Reels',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
             onPressed: () => context.push('/camera'),
-            icon: const Icon(
-              Icons.camera_alt,
-              color: Colors.white,
-            ),
+            icon: const Icon(Icons.camera_alt, color: Colors.white),
             tooltip: 'Create Reel',
           ),
         ],
@@ -157,9 +151,9 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
             children: [
               const Icon(Icons.error, size: 64, color: Colors.white),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Failed to load reels',
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.white),
               ),
               ElevatedButton(
                 onPressed: () => ref.invalidate(reelsProvider),
@@ -223,10 +217,7 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                Colors.black.withOpacity(0.3),
-              ],
+              colors: [Colors.transparent, Colors.black.withValues(alpha: 0.3)],
             ),
           ),
         ),
@@ -244,13 +235,13 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
                   CircleAvatar(
                     radius: 20,
                     backgroundColor: Colors.grey,
-                    backgroundImage: reel.user?.avatar != null
-                        ? NetworkImage(reel.user!.avatar!)
+                    backgroundImage: reel.user.avatar != null
+                        ? NetworkImage(reel.user.avatar!)
                         : null,
-                    child: reel.user?.avatar == null
+                    child: reel.user.avatar == null
                         ? Text(
-                            reel.user?.username.isNotEmpty == true
-                                ? reel.user!.username[0].toUpperCase()
+                            reel.user.username.isNotEmpty == true
+                                ? reel.user.username[0].toUpperCase()
                                 : '?',
                             style: const TextStyle(
                               color: Colors.white,
@@ -261,24 +252,22 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
                   ),
                   const SizedBox(width: AppSizes.paddingMedium),
                   Text(
-                    reel.user?.username ?? 'Unknown',
+                    reel.user.username,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
-                  if (reel.user?.isVerified == true) ...[
+                  if (reel.user.isVerified == true) ...[
                     const SizedBox(width: 4),
-                    const Icon(
-                      Icons.verified,
-                      color: Colors.blue,
-                      size: 16,
-                    ),
+                    const Icon(Icons.verified, color: Colors.blue, size: 16),
                   ],
                   const SizedBox(width: AppSizes.paddingMedium),
                   ElevatedButton(
-                    onPressed: () => ref.read(reelsProvider.notifier).followUser(reel.user?.id ?? ''),
+                    onPressed: () => ref
+                        .read(reelsProvider.notifier)
+                        .followUser(reel.user.id),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       foregroundColor: Colors.white,
@@ -302,10 +291,7 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
               if (reel.caption != null && reel.caption!.isNotEmpty)
                 Text(
                   reel.caption!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -316,9 +302,11 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
               Row(
                 children: [
                   Icon(
-                    reel.postType == 'reel' ? Icons.music_note :
-                    reel.postType == 'video' ? Icons.videocam :
-                    Icons.photo,
+                    reel.postType == 'reel'
+                        ? Icons.music_note
+                        : reel.postType == 'video'
+                        ? Icons.videocam
+                        : Icons.photo,
                     color: Colors.white,
                     size: 16,
                   ),
@@ -326,10 +314,7 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
                   Expanded(
                     child: Text(
                       _getAudioInfo(reel),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -383,7 +368,7 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
           right: AppSizes.paddingMedium,
           child: LinearProgressIndicator(
             value: (_currentPage + 1) / totalReels,
-            backgroundColor: Colors.white.withOpacity(0.3),
+            backgroundColor: Colors.white.withValues(alpha: 0.3),
             valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
           ),
         ),
@@ -417,11 +402,7 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
       children: [
         IconButton(
           onPressed: onTap,
-          icon: Icon(
-            icon,
-            color: color,
-            size: 28,
-          ),
+          icon: Icon(icon, color: color, size: 28),
         ),
         if (label.isNotEmpty)
           Text(
@@ -458,11 +439,11 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
 
       case 'video':
         // For videos, show video info
-        return '🎬 ${reel.user?.username ?? 'User'} • Video';
+        return '🎬 ${reel.user.username} • Video';
 
       case 'photo':
         // For photos, show photo info
-        return '📸 ${reel.user?.username ?? 'User'} • Photo';
+        return '📸 ${reel.user.username} • Photo';
 
       default:
         // Fallback based on available data
@@ -480,9 +461,7 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
       builder: (context) => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(16),
-          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -491,10 +470,7 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
               padding: EdgeInsets.all(16),
               child: Text(
                 'Share Reel',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             ListTile(
@@ -514,9 +490,9 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
                 // Copy reel link to clipboard
                 final link = '${ApiConstants.baseUrl}/reel/${reel.id}';
                 // In a real app, you'd use Clipboard.setData
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Link copied: $link')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Link copied: $link')));
               },
             ),
             ListTile(
@@ -525,7 +501,10 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
               onTap: () {
                 Navigator.pop(context);
                 // Open message composer with reel
-                context.push('/compose-message', extra: {'type': 'reel', 'data': reel});
+                context.push(
+                  '/compose-message',
+                  extra: {'type': 'reel', 'data': reel},
+                );
               },
             ),
             ListTile(
@@ -553,9 +532,7 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
       builder: (context) => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(16),
-          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -575,9 +552,9 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
                 Navigator.pop(context);
                 final link = '${ApiConstants.baseUrl}/reel/${reel.id}';
                 // In a real app, you'd use Clipboard.setData
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Link copied: $link')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Link copied: $link')));
               },
             ),
             ListTile(
@@ -630,7 +607,9 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
               onChanged: (value) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Report submitted for inappropriate content')),
+                  const SnackBar(
+                    content: Text('Report submitted for inappropriate content'),
+                  ),
                 );
               },
             ),
@@ -641,7 +620,9 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
               onChanged: (value) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Report submitted for harassment')),
+                  const SnackBar(
+                    content: Text('Report submitted for harassment'),
+                  ),
                 );
               },
             ),
@@ -670,8 +651,8 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
 
   void _saveVideo(PostModel reel) {
     // In a real app, this would download and save the video
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Video download started')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Video download started')));
   }
 }

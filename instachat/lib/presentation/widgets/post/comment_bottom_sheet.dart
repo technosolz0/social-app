@@ -54,19 +54,21 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
   }
 
   Future<void> _loadComments() async {
-    setState(() => _isLoading = true);
+    if (mounted) setState(() => _isLoading = true);
     try {
       final apiService = ApiService();
       final commentsData = await apiService.getPostComments(widget.post.id);
       final comments = commentsData
           .map((json) => CommentModel.fromJson(json))
           .toList();
-      setState(() {
-        _comments = comments;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _comments = comments;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -79,16 +81,21 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
-    setState(() => _isSubmitting = true);
+    if (mounted) setState(() => _isSubmitting = true);
     try {
       final apiService = ApiService();
-      final newCommentData = await apiService.addComment(widget.post.id, text);
+      final newCommentData = await apiService.addPostComment(
+        widget.post.id,
+        text,
+      );
       final newComment = CommentModel.fromJson(newCommentData);
 
-      setState(() {
-        _comments.insert(0, newComment);
-        _commentController.clear();
-      });
+      if (mounted) {
+        setState(() {
+          _comments.insert(0, newComment);
+          _commentController.clear();
+        });
+      }
 
       // Scroll to top to show new comment
       _scrollController.animateTo(
@@ -103,7 +110,7 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
         ).showSnackBar(SnackBar(content: Text('Failed to post comment: $e')));
       }
     } finally {
-      setState(() => _isSubmitting = false);
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -115,12 +122,16 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
     final wasLiked = comment.isLiked;
 
     // Optimistic update
-    setState(() {
-      _comments[commentIndex] = comment.copyWith(
-        isLiked: !wasLiked,
-        likesCount: wasLiked ? (comment.likesCount - 1).clamp(0, 999999) : comment.likesCount + 1,
-      );
-    });
+    if (mounted) {
+      setState(() {
+        _comments[commentIndex] = comment.copyWith(
+          isLiked: !wasLiked,
+          likesCount: wasLiked
+              ? (comment.likesCount - 1).clamp(0, 999999)
+              : comment.likesCount + 1,
+        );
+      });
+    }
 
     try {
       final apiService = ApiService();
@@ -131,9 +142,11 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
       }
     } catch (e) {
       // Revert on error
-      setState(() {
-        _comments[commentIndex] = comment;
-      });
+      if (mounted) {
+        setState(() {
+          _comments[commentIndex] = comment;
+        });
+      }
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -169,10 +182,12 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
     final commentIndex = _comments.indexWhere((c) => c.id == commentId);
     if (commentIndex == -1) return;
     final removedComment = _comments[commentIndex];
-    
-    setState(() {
-      _comments.removeAt(commentIndex);
-    });
+
+    if (mounted) {
+      setState(() {
+        _comments.removeAt(commentIndex);
+      });
+    }
 
     try {
       final apiService = ApiService();
@@ -182,9 +197,11 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
       );
     } catch (e) {
       // Revert on error
-      setState(() {
-        _comments.insert(commentIndex, removedComment);
-      });
+      if (mounted) {
+        setState(() {
+          _comments.insert(commentIndex, removedComment);
+        });
+      }
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -203,10 +220,14 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
   Future<void> _submitReply(String parentCommentId, String text) async {
     if (text.trim().isEmpty) return;
 
-    setState(() => _isSubmitting = true);
+    if (mounted) setState(() => _isSubmitting = true);
     try {
       final apiService = ApiService();
-      final replyData = await apiService.addComment(widget.post.id, text, parentId: parentCommentId);
+      final replyData = await apiService.addPostComment(
+        widget.post.id,
+        text,
+        parentId: parentCommentId,
+      );
       final reply = CommentModel.fromJson(replyData);
 
       // Find parent comment and add reply
@@ -216,19 +237,21 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
         final updatedReplies = [...parentComment.replies, reply];
         final updatedComment = parentComment.copyWith(replies: updatedReplies);
 
-        setState(() {
-          _comments[parentIndex] = updatedComment;
-          _commentController.clear();
-        });
+        if (mounted) {
+          setState(() {
+            _comments[parentIndex] = updatedComment;
+            _commentController.clear();
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to post reply: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to post reply: $e')));
       }
     } finally {
-      setState(() => _isSubmitting = false);
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -267,9 +290,11 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
     final updatedReplies = [...parentComment.replies]..removeAt(replyIndex);
     final updatedComment = parentComment.copyWith(replies: updatedReplies);
 
-    setState(() {
-      _comments[parentIndex] = updatedComment;
-    });
+    if (mounted) {
+      setState(() {
+        _comments[parentIndex] = updatedComment;
+      });
+    }
 
     try {
       final apiService = ApiService();
@@ -279,15 +304,18 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
       );
     } catch (e) {
       // Revert on error
-      final revertedReplies = [...updatedReplies]..insert(replyIndex, removedReply);
+      final revertedReplies = [...updatedReplies]
+        ..insert(replyIndex, removedReply);
       final revertedComment = parentComment.copyWith(replies: revertedReplies);
-      setState(() {
-        _comments[parentIndex] = revertedComment;
-      });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete reply: $e')),
-        );
+        setState(() {
+          _comments[parentIndex] = revertedComment;
+        });
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete reply: $e')));
       }
     }
   }
@@ -362,15 +390,22 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                       itemCount: _comments.length,
                       itemBuilder: (context, index) {
                         final comment = _comments[index];
-                        final currentUserId = ref.watch(authNotifierProvider).user?.id;
+                        final currentUserId = ref
+                            .watch(authNotifierProvider)
+                            .user
+                            ?.id;
                         return CommentItem(
                           comment: comment,
                           currentUserId: currentUserId,
                           onLike: () => _likeComment(comment.id),
-                          onReply: () => _replyToComment(comment.id, comment.user.username),
+                          onReply: () => _replyToComment(
+                            comment.id,
+                            comment.user.username,
+                          ),
                           onDelete: () => _deleteComment(comment.id),
                           onReplySubmit: _submitReply,
-                          onReplyDelete: (replyId) => _deleteReply(comment.id, replyId),
+                          onReplyDelete: (replyId) =>
+                              _deleteReply(comment.id, replyId),
                         );
                       },
                     ),
@@ -385,7 +420,9 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                 bottom: MediaQuery.of(context).viewInsets.bottom + 12,
               ),
               decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: Colors.grey[300]!, width: 0.5)),
+                border: Border(
+                  top: BorderSide(color: Colors.grey[300]!, width: 0.5),
+                ),
                 color: Colors.white,
               ),
               child: Row(
@@ -393,8 +430,11 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                   // User avatar
                   CircleAvatar(
                     radius: 18,
-                    backgroundImage: ref.watch(authNotifierProvider).user?.avatar != null
-                        ? NetworkImage(ref.watch(authNotifierProvider).user!.avatar!)
+                    backgroundImage:
+                        ref.watch(authNotifierProvider).user?.avatar != null
+                        ? NetworkImage(
+                            ref.watch(authNotifierProvider).user!.avatar!,
+                          )
                         : null,
                     backgroundColor: Colors.grey[200],
                     child: ref.watch(authNotifierProvider).user?.avatar == null
@@ -414,17 +454,21 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                       ),
                       maxLines: null,
                       textInputAction: TextInputAction.send,
-                      onChanged: (value) => setState(() {}),
+                      onChanged: (value) {
+                        if (mounted) setState(() {});
+                      },
                       onSubmitted: (_) => _submitComment(),
                     ),
                   ),
 
                   // Post button
                   TextButton(
-                    onPressed:
-                        _isSubmitting || _commentController.text.trim().isEmpty
-                        ? null
-                        : _submitComment,
+                    onPressed: () {
+                      _isSubmitting || _commentController.text.trim().isEmpty
+                          ? null
+                          : _submitComment();
+                      Navigator.pop(context);
+                    },
                     child: _isSubmitting
                         ? const SizedBox(
                             width: 20,
@@ -510,16 +554,16 @@ class _CommentItemState extends State<CommentItem>
     widget.onLike();
 
     // Show heart animation
-    setState(() => _showHeartAnimation = true);
+    if (mounted) setState(() => _showHeartAnimation = true);
     _likeAnimationController.forward(from: 0).then((_) {
-      setState(() => _showHeartAnimation = false);
+      if (mounted) setState(() => _showHeartAnimation = false);
     });
 
     // Show points animation if liking (not unliking)
     if (!widget.comment.isLiked) {
-      setState(() => _showPointsAnimation = true);
+      if (mounted) setState(() => _showPointsAnimation = true);
       _pointsAnimationController.forward(from: 0).then((_) {
-        setState(() => _showPointsAnimation = false);
+        if (mounted) setState(() => _showPointsAnimation = false);
       });
     }
   }
@@ -537,7 +581,10 @@ class _CommentItemState extends State<CommentItem>
             if (widget.comment.user.id == widget.currentUserId)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Delete', style: TextStyle(color: Colors.red)),
+                title: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   widget.onDelete();
@@ -653,9 +700,9 @@ class _CommentItemState extends State<CommentItem>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to report comment: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to report comment: $e')));
       }
     }
   }
@@ -711,7 +758,10 @@ class _CommentItemState extends State<CommentItem>
                         children: [
                           Text(
                             timeago.format(widget.comment.createdAt),
-                            style: const TextStyle(color: Colors.grey, fontSize: 12),
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
                           ),
                           const SizedBox(width: 16),
                           if (widget.comment.likesCount > 0)
@@ -744,13 +794,26 @@ class _CommentItemState extends State<CommentItem>
                           child: Column(
                             children: widget.comment.replies.map((reply) {
                               return Padding(
-                                padding: const EdgeInsets.only(left: 32, top: 8),
+                                padding: const EdgeInsets.only(
+                                  left: 32,
+                                  top: 8,
+                                ),
                                 child: CommentItem(
                                   comment: reply,
                                   currentUserId: widget.currentUserId,
-                                  onLike: widget.onReplySubmit != null ? () => widget.onReplySubmit!(reply.id, '') : () {},
-                                  onReply: widget.onReplySubmit != null ? () => widget.onReplySubmit!(reply.id, '@${reply.user.username} ') : () {},
-                                  onDelete: widget.onReplyDelete != null ? () => widget.onReplyDelete!(reply.id) : () {},
+                                  onLike: widget.onReplySubmit != null
+                                      ? () =>
+                                            widget.onReplySubmit!(reply.id, '')
+                                      : () {},
+                                  onReply: widget.onReplySubmit != null
+                                      ? () => widget.onReplySubmit!(
+                                          reply.id,
+                                          '@${reply.user.username} ',
+                                        )
+                                      : () {},
+                                  onDelete: widget.onReplyDelete != null
+                                      ? () => widget.onReplyDelete!(reply.id)
+                                      : () {},
                                 ),
                               );
                             }).toList(),
@@ -764,7 +827,9 @@ class _CommentItemState extends State<CommentItem>
               // Like button
               IconButton(
                 icon: Icon(
-                  widget.comment.isLiked ? Icons.favorite : Icons.favorite_border,
+                  widget.comment.isLiked
+                      ? Icons.favorite
+                      : Icons.favorite_border,
                   size: 16,
                   color: widget.comment.isLiked ? Colors.red : Colors.grey,
                 ),
@@ -792,13 +857,9 @@ class _CommentItemState extends State<CommentItem>
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
-                child: const Icon(
-                  Icons.favorite,
-                  color: Colors.red,
-                  size: 24,
-                ),
+                child: const Icon(Icons.favorite, color: Colors.red, size: 24),
               ),
             ),
           ),
@@ -809,15 +870,16 @@ class _CommentItemState extends State<CommentItem>
             right: 40,
             top: 0,
             child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0),
-                end: const Offset(0, -1.5),
-              ).animate(
-                CurvedAnimation(
-                  parent: _pointsAnimationController,
-                  curve: Curves.easeOut,
-                ),
-              ),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 0),
+                    end: const Offset(0, -1.5),
+                  ).animate(
+                    CurvedAnimation(
+                      parent: _pointsAnimationController,
+                      curve: Curves.easeOut,
+                    ),
+                  ),
               child: FadeTransition(
                 opacity: Tween<double>(begin: 1.0, end: 0.0).animate(
                   CurvedAnimation(
@@ -826,7 +888,10 @@ class _CommentItemState extends State<CommentItem>
                   ),
                 ),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFFFF6B35), Color(0xFFF7931E)],
@@ -834,7 +899,7 @@ class _CommentItemState extends State<CommentItem>
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.orange.withOpacity(0.4),
+                        color: Colors.orange.withValues(alpha: 0.4),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),

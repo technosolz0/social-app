@@ -2,6 +2,7 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from .models import Post, Story
 from apps.users.serializers import UserSerializer
+from apps.social.models import Like
 
 class PostSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
@@ -20,7 +21,6 @@ class PostSerializer(serializers.ModelSerializer):
     def get_is_liked(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            from apps.social.models import Like
             return Like.objects.filter(user=request.user, post=obj).exists()
         return False
 

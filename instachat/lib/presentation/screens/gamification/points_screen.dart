@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/constants/theme_constants.dart';
@@ -15,7 +16,7 @@ class PointsScreen extends ConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         title: const Text('Points & Level'),
         actions: [
@@ -61,7 +62,8 @@ class PointsScreen extends ConsumerWidget {
   Widget _buildPointsContent(BuildContext context, gamification) {
     final currentLevel = gamification.currentLevel;
     final totalPoints = gamification.totalPoints;
-    final pointsForCurrentLevel = totalPoints % 250; // Assuming 250 points per level
+    final pointsForCurrentLevel =
+        totalPoints % 250; // Assuming 250 points per level
     final pointsNeededForNextLevel = 250 - pointsForCurrentLevel;
     final progressPercentage = pointsForCurrentLevel / 250;
 
@@ -88,17 +90,13 @@ class PointsScreen extends ConsumerWidget {
                   vertical: AppSizes.paddingMedium,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(50),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.star,
-                      color: Colors.white,
-                      size: 24,
-                    ),
+                    const Icon(Icons.star, color: Colors.white, size: 24),
                     const SizedBox(width: 8),
                     Text(
                       'Level $currentLevel',
@@ -127,7 +125,7 @@ class PointsScreen extends ConsumerWidget {
               Text(
                 'Total Points',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 16,
                 ),
               ),
@@ -144,7 +142,7 @@ class PointsScreen extends ConsumerWidget {
                       Text(
                         'Progress to Level ${currentLevel + 1}',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 14,
                         ),
                       ),
@@ -163,8 +161,10 @@ class PointsScreen extends ConsumerWidget {
 
                   LinearProgressIndicator(
                     value: progressPercentage,
-                    backgroundColor: Colors.white.withOpacity(0.3),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    backgroundColor: Colors.white.withValues(alpha: 0.3),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Colors.white,
+                    ),
                   ),
 
                   const SizedBox(height: 4),
@@ -172,7 +172,7 @@ class PointsScreen extends ConsumerWidget {
                   Text(
                     '$pointsNeededForNextLevel points to next level',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 12,
                     ),
                   ),
@@ -231,10 +231,7 @@ class PointsScreen extends ConsumerWidget {
         // Points Breakdown
         const Text(
           'How to Earn Points',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
 
         const SizedBox(height: AppSizes.paddingMedium),
@@ -284,10 +281,7 @@ class PointsScreen extends ConsumerWidget {
         // Level Benefits
         const Text(
           'Level Benefits',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
 
         const SizedBox(height: AppSizes.paddingMedium),
@@ -325,10 +319,7 @@ class PointsScreen extends ConsumerWidget {
         // Quick Actions
         const Text(
           'Quick Actions',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
 
         const SizedBox(height: AppSizes.paddingMedium),
@@ -340,7 +331,7 @@ class PointsScreen extends ConsumerWidget {
                 context,
                 icon: Icons.flag,
                 label: 'View Quests',
-                onTap: () => Navigator.pushNamed(context, '/quests'),
+                onTap: () => context.push('/quests'),
               ),
             ),
             const SizedBox(width: AppSizes.paddingMedium),
@@ -349,7 +340,7 @@ class PointsScreen extends ConsumerWidget {
                 context,
                 icon: Icons.emoji_events,
                 label: 'View Badges',
-                onTap: () => Navigator.pushNamed(context, '/badges'),
+                onTap: () => context.push('/badges'),
               ),
             ),
           ],
@@ -364,7 +355,7 @@ class PointsScreen extends ConsumerWidget {
                 context,
                 icon: Icons.leaderboard,
                 label: 'Leaderboard',
-                onTap: () => Navigator.pushNamed(context, '/leaderboard'),
+                onTap: () => context.push('/leaderboard'),
               ),
             ),
             const SizedBox(width: AppSizes.paddingMedium),
@@ -402,14 +393,10 @@ class PointsScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 20,
-            ),
+            child: Icon(icon, color: color, size: 20),
           ),
 
           const SizedBox(width: AppSizes.paddingMedium),
@@ -434,7 +421,7 @@ class PointsScreen extends ConsumerWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        color: color.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -453,10 +440,7 @@ class PointsScreen extends ConsumerWidget {
 
                 Text(
                   description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -519,21 +503,14 @@ class PointsScreen extends ConsumerWidget {
 
                 Text(
                   description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),
           ),
 
           if (isCurrent)
-            Icon(
-              Icons.check_circle,
-              color: Colors.blue.shade600,
-              size: 20,
-            ),
+            Icon(Icons.check_circle, color: Colors.blue.shade600, size: 20),
         ],
       ),
     );
@@ -568,7 +545,8 @@ class PointsScreen extends ConsumerWidget {
   }
 
   void _shareProgress(BuildContext context, gamification) async {
-    final shareText = '''
+    final shareText =
+        '''
 🎉 Check out my progress on Social App!
 
 🏆 Level: ${gamification.currentLevel}
@@ -577,13 +555,11 @@ class PointsScreen extends ConsumerWidget {
 
 Join me and start earning points too! Download Social App now.
 #SocialApp #Gamification #LevelUp
-    '''.trim();
+    '''
+            .trim();
 
     try {
-      await Share.share(
-        shareText,
-        subject: 'My Social App Progress',
-      );
+      await Share.share(shareText, subject: 'My Social App Progress');
     } catch (e) {
       // Fallback to snackbar if sharing fails
       if (context.mounted) {
@@ -612,7 +588,7 @@ Join me and start earning points too! Download Social App now.
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: const Text('Got it'),
           ),
         ],

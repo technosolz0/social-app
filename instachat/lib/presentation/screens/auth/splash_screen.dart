@@ -47,7 +47,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     // Listen for animation completion
     _animationController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
+      if (status == AnimationStatus.completed && mounted) {
         setState(() => _animationCompleted = true);
         _tryNavigate();
       }
@@ -56,10 +56,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   Future<void> _checkAuthentication() async {
     try {
+      if (!mounted) return;
+
       setState(() => _statusText = 'Checking stored credentials...');
 
       // Check authentication status
       await ref.read(authNotifierProvider.notifier).checkAuthStatus();
+
+      if (!mounted) return;
 
       final authState = ref.read(authNotifierProvider);
       if (authState.isAuthenticated) {
@@ -70,7 +74,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     } catch (e) {
       // Handle any errors during auth check
       debugPrint('Auth check error: $e');
-      setState(() => _statusText = 'Preparing app...');
+      if (mounted) {
+        setState(() => _statusText = 'Preparing app...');
+      }
     } finally {
       if (mounted) {
         setState(() => _authCheckCompleted = true);
@@ -86,7 +92,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
       // Small delay for better UX
       Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) {
+        if (mounted && context.mounted) {
           if (authState.isAuthenticated) {
             context.go('/home');
           } else {
@@ -129,7 +135,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -162,7 +168,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       'Connect & Share',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -175,7 +181,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       height: 40,
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.white.withOpacity(0.8),
+                          Colors.white.withValues(alpha: 0.8),
                         ),
                         strokeWidth: 3,
                       ),
@@ -191,7 +197,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         _statusText,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           fontWeight: FontWeight.w400,
                         ),
                         textAlign: TextAlign.center,

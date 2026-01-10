@@ -56,7 +56,7 @@ class _PostCardState extends ConsumerState<PostCard>
 
   void _handleLike() {
     widget.onLike();
-    
+
     // Show heart animation
     setState(() => _showHeartAnimation = true);
     _likeAnimationController.forward(from: 0).then((_) {
@@ -84,21 +84,18 @@ class _PostCardState extends ConsumerState<PostCard>
         gradient: LinearGradient(
           colors: isDark
               ? [
-                  const Color(0xFF1A1F3A).withOpacity(0.8),
-                  const Color(0xFF252B49).withOpacity(0.6),
+                  const Color(0xFF1A1F3A).withValues(alpha: 0.8),
+                  const Color(0xFF252B49).withValues(alpha: 0.6),
                 ]
-              : [
-                  Colors.white,
-                  Colors.white.withOpacity(0.95),
-                ],
+              : [Colors.white, Colors.white.withValues(alpha: 0.95)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
             color: isDark
-                ? Colors.black.withOpacity(0.3)
-                : AppTheme.primaryColor.withOpacity(0.1),
+                ? Colors.black.withValues(alpha: 0.3)
+                : AppTheme.primaryColor.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -123,7 +120,8 @@ class _PostCardState extends ConsumerState<PostCard>
                 child: PostHeader(
                   user: widget.post.user,
                   onTap: () {
-                    ref.read(activityTrackerProvider.notifier)
+                    ref
+                        .read(activityTrackerProvider.notifier)
                         .trackProfileView(widget.post.userId);
                   },
                 ),
@@ -152,7 +150,8 @@ class _PostCardState extends ConsumerState<PostCard>
                             mediaUrl: widget.post.mediaUrl,
                             postType: widget.post.postType,
                             onView: () {
-                              ref.read(activityTrackerProvider.notifier)
+                              ref
+                                  .read(activityTrackerProvider.notifier)
                                   .trackPostView(widget.post.id);
                             },
                           ),
@@ -165,7 +164,7 @@ class _PostCardState extends ConsumerState<PostCard>
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     Colors.transparent,
-                                    Colors.black.withOpacity(0.1),
+                                    Colors.black.withValues(alpha: 0.1),
                                   ],
                                 ),
                               ),
@@ -190,8 +189,8 @@ class _PostCardState extends ConsumerState<PostCard>
                             shape: BoxShape.circle,
                             gradient: RadialGradient(
                               colors: [
-                                Colors.white.withOpacity(0.8),
-                                Colors.white.withOpacity(0.0),
+                                Colors.white.withValues(alpha: 0.8),
+                                Colors.white.withValues(alpha: 0.0),
                               ],
                             ),
                           ),
@@ -208,30 +207,37 @@ class _PostCardState extends ConsumerState<PostCard>
                       Positioned(
                         top: 60,
                         child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 0),
-                            end: const Offset(0, -2),
-                          ).animate(
-                            CurvedAnimation(
-                              parent: _pointsAnimationController,
-                              curve: Curves.easeOut,
-                            ),
-                          ),
-                          child: FadeTransition(
-                            opacity: Tween<double>(begin: 1.0, end: 0.0).animate(
-                              CurvedAnimation(
-                                parent: _pointsAnimationController,
-                                curve: const Interval(0.5, 1.0),
+                          position:
+                              Tween<Offset>(
+                                begin: const Offset(0, 0),
+                                end: const Offset(0, -2),
+                              ).animate(
+                                CurvedAnimation(
+                                  parent: _pointsAnimationController,
+                                  curve: Curves.easeOut,
+                                ),
                               ),
-                            ),
+                          child: FadeTransition(
+                            opacity: Tween<double>(begin: 1.0, end: 0.0)
+                                .animate(
+                                  CurvedAnimation(
+                                    parent: _pointsAnimationController,
+                                    curve: const Interval(0.5, 1.0),
+                                  ),
+                                ),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
                               decoration: BoxDecoration(
                                 gradient: AppTheme.sunsetGradient,
                                 borderRadius: BorderRadius.circular(30),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.warningColor.withOpacity(0.4),
+                                    color: AppTheme.warningColor.withValues(
+                                      alpha: 0.4,
+                                    ),
                                     blurRadius: 12,
                                     offset: const Offset(0, 4),
                                   ),
@@ -240,7 +246,11 @@ class _PostCardState extends ConsumerState<PostCard>
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.star, color: Colors.white, size: 24),
+                                  const Icon(
+                                    Icons.star,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
                                   const SizedBox(width: 8),
                                   const Text(
                                     '+5 Points',
@@ -276,7 +286,10 @@ class _PostCardState extends ConsumerState<PostCard>
 
               // Likes count with gradient
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: ShaderMask(
                   shaderCallback: (bounds) => gradient.createShader(bounds),
                   child: Text(
@@ -304,7 +317,10 @@ class _PostCardState extends ConsumerState<PostCard>
               // View comments with accent color
               if (widget.post.commentsCount > 0)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: GestureDetector(
                     onTap: widget.onComment,
                     child: Text(

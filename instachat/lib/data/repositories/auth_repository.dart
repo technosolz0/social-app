@@ -2,17 +2,15 @@ import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
 import '../services/local_storage_service.dart';
+import '../services/firebase_service.dart';
 
 class AuthRepository {
   final ApiService _apiService;
   final LocalStorageService _localStorage;
 
-  AuthRepository({
-    ApiService? apiService,
-    LocalStorageService? localStorage,
-  }) :
-    _apiService = apiService ?? ApiService(),
-    _localStorage = localStorage ?? LocalStorageService();
+  AuthRepository({ApiService? apiService, LocalStorageService? localStorage})
+    : _apiService = apiService ?? ApiService(),
+      _localStorage = localStorage ?? LocalStorageService();
 
   // Public getter for local storage (needed for auth provider)
   LocalStorageService get localStorage => _localStorage;
@@ -23,11 +21,35 @@ class AuthRepository {
 
   Future<Map<String, dynamic>> login(String identifier, String password) async {
     try {
-      final response = await _apiService.login(identifier, password);
+      // Get FCM token if available
+      String? deviceToken;
+      try {
+        // Import FirebaseService dynamically to avoid initialization issues
+        final firebaseService = await _getFirebaseService();
+        deviceToken = await firebaseService?.getToken();
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️ Could not get FCM token for login: $e');
+        }
+      }
+
+      final loginData = {
+        'identifier': identifier,
+        'password': password,
+        if (deviceToken != null) 'device_token': deviceToken,
+        if (deviceToken != null) 'device_type': 'android',
+        if (deviceToken != null) 'device_id': deviceToken.substring(0, deviceToken.length > 50 ? 50 : deviceToken.length),
+      };
+
+      final response = await _apiService.customRequest(
+        method: 'POST',
+        path: '/users/login/',
+        data: loginData,
+      );
 
       // Extract tokens
-      final accessToken = response['access'] as String?;
-      final refreshToken = response['refresh'] as String?;
+      final accessToken = response.data['access'] as String?;
+      final refreshToken = response.data['refresh'] as String?;
 
       if (accessToken != null) {
         // Save tokens securely
@@ -43,7 +65,7 @@ class AuthRepository {
         _apiService.setAuthToken(accessToken);
       }
 
-      return response;
+      return response.data;
     } catch (e) {
       if (kDebugMode) {
         print('❌ Login failed: $e');
@@ -57,14 +79,34 @@ class AuthRepository {
     required String password,
   }) async {
     try {
-      final response = await _apiService.register(
-        identifier: identifier,
-        password: password,
+      // Get FCM token if available
+      String? deviceToken;
+      try {
+        final firebaseService = _getFirebaseService();
+        deviceToken = await firebaseService?.getToken();
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️ Could not get FCM token for registration: $e');
+        }
+      }
+
+      final registerData = {
+        'identifier': identifier,
+        'password': password,
+        if (deviceToken != null) 'device_token': deviceToken,
+        if (deviceToken != null) 'device_type': 'android',
+        if (deviceToken != null) 'device_id': deviceToken.substring(0, deviceToken.length > 50 ? 50 : deviceToken.length),
+      };
+
+      final response = await _apiService.customRequest(
+        method: 'POST',
+        path: '/users/',
+        data: registerData,
       );
 
       // Extract tokens
-      final accessToken = response['access'] as String?;
-      final refreshToken = response['refresh'] as String?;
+      final accessToken = response.data['access'] as String?;
+      final refreshToken = response.data['refresh'] as String?;
 
       if (accessToken != null) {
         // Save tokens securely
@@ -75,9 +117,12 @@ class AuthRepository {
 
         // Set token in API service
         _apiService.setAuthToken(accessToken);
+
+        // Save user credentials for automatic re-login
+        await _localStorage.saveUserCredentials(identifier, password);
       }
 
-      return response;
+      return response.data;
     } catch (e) {
       if (kDebugMode) {
         print('❌ Registration failed: $e');
@@ -90,10 +135,7 @@ class AuthRepository {
     try {
       // Call logout endpoint (optional)
       try {
-        await _apiService.customRequest(
-          method: 'POST',
-          path: '/auth/logout/',
-        );
+        await _apiService.customRequest(method: 'POST', path: '/auth/logout/');
       } catch (e) {
         // Ignore logout endpoint errors
       }
@@ -149,12 +191,40 @@ class AuthRepository {
 
   Future<UserModel> updateProfile(Map<String, dynamic> profileData) async {
     try {
-      final response = await _apiService.customRequest(
-        method: 'PATCH',
-        path: '/users/me/profile/',
-        data: profileData,
-      );
-      return UserModel.fromJson(response.data);
+      // Try PATCH first (for partial updates)
+      try {
+        if (kDebugMode) {
+          print('🔄 Trying PATCH method for profile update');
+        }
+        final response = await _apiService.customRequest(
+          method: 'PATCH',
+          path: '/users/me/',
+          data: profileData,
+        );
+        if (kDebugMode) {
+          print('✅ PATCH method successful');
+        }
+        return UserModel.fromJson(response.data);
+      } catch (e) {
+        // If PATCH fails with 405 (Method Not Allowed), try PUT
+        if (e.toString().contains('405') || e.toString().contains('Method Not Allowed')) {
+          if (kDebugMode) {
+            print('🔄 PATCH not allowed, trying PUT method');
+          }
+          final response = await _apiService.customRequest(
+            method: 'PUT',
+            path: '/users/me/',
+            data: profileData,
+          );
+          if (kDebugMode) {
+            print('✅ PUT method successful');
+          }
+          return UserModel.fromJson(response.data);
+        } else {
+          // Re-throw if it's not a 405 error
+          rethrow;
+        }
+      }
     } catch (e) {
       if (kDebugMode) {
         print('❌ Failed to update profile: $e');
@@ -245,5 +315,20 @@ class AuthRepository {
   Future<void> clearStoredTokens() async {
     await _localStorage.clearSecureData();
     _apiService.clearAuthToken();
+  }
+
+  // ===========================================================================
+  // HELPER METHODS
+  // ===========================================================================
+
+  FirebaseService? _getFirebaseService() {
+    try {
+      return FirebaseService();
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Could not get FirebaseService: $e');
+      }
+      return null;
+    }
   }
 }

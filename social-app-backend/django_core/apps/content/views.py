@@ -1,3 +1,4 @@
+from datetime import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -6,6 +7,7 @@ from django.core.cache import cache
 from .models import Post, Story
 from .serializers import PostSerializer, PostCreateSerializer, StorySerializer
 from .tasks import process_video_upload
+from apps.social.models import Like, Comment
 
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.select_related('user__profile').all()
@@ -104,7 +106,6 @@ class PostViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def comments(self, request, pk=None):
         """Get comments for a post"""
-        from apps.social.models import Comment
         comments = Comment.objects.filter(
             post_id=pk,
             parent=None  # Only top-level comments
@@ -125,7 +126,8 @@ class PostViewSet(viewsets.ModelViewSet):
                 'created_at': comment.created_at.isoformat(),
                 'is_liked': Like.objects.filter(
                     user=request.user,
-                    comment=comment
+                    content_type=ContentType.objects.get_for_model(Comment),
+                    object_id=comment.id
                 ).exists(),
             })
 
@@ -134,7 +136,6 @@ class PostViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def add_comment(self, request, pk=None):
         """Add a comment to a post"""
-        from apps.social.models import Comment
         text = request.data.get('text')
         parent_id = request.data.get('parent_id')
 

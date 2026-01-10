@@ -11,6 +11,7 @@ import 'package:image/image.dart' as img_lib;
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/theme_constants.dart';
 import '../../providers/post_provider.dart';
+import '../post/image_editor_screen.dart';
 
 // ============================================
 // lib/presentation/screens/camera/camera_screen.dart
@@ -390,21 +391,7 @@ class _RecordingTimerState extends State<RecordingTimer> {
   }
 }
 
-class ImageEditorScreen extends StatelessWidget {
-  final File imageFile;
 
-  const ImageEditorScreen({super.key, required this.imageFile});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Edit Image')),
-      body: Center(
-        child: Image.file(imageFile),
-      ),
-    );
-  }
-}
 
 class VideoEditorScreen extends StatelessWidget {
   final File videoFile;
@@ -441,3 +428,4 @@ class PostNotifier extends StateNotifier<List<dynamic>> {
     // Mock post creation
   }
 }
+
