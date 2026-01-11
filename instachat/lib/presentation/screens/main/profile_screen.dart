@@ -193,7 +193,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 ),
 
                 // Bio
-                if (user.bio != null && user.bio!.isNotEmpty) ...[
+                if (user.bio?.isNotEmpty ?? false) ...[
                   const SizedBox(height: AppSizes.paddingSmall),
                   Text(
                     user.bio!,

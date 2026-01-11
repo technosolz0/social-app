@@ -12,23 +12,91 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ['followers_count', 'following_count', 'posts_count']
 
 class UserSerializer(serializers.ModelSerializer):
-    profile = UserProfileSerializer(read_only=True)
+    # Flatten profile fields with proper null handling
+    bio = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+    website = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    posts_count = serializers.SerializerMethodField()
+    is_private = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'is_verified', 'is_creator',
-                  'profile', 'created_at']
-        read_only_fields = ['id', 'created_at', 'is_verified']
+        fields = ['id', 'username', 'email', 'bio', 'avatar', 'website', 'location',
+                  'followers_count', 'following_count', 'posts_count', 'is_private',
+                  'is_verified', 'is_creator', 'created_at']
+        read_only_fields = ['id', 'created_at', 'is_verified', 'followers_count',
+                           'following_count', 'posts_count']
+
+    def get_bio(self, obj):
+        return getattr(obj.profile, 'bio', None) if hasattr(obj, 'profile') else None
+
+    def get_avatar(self, obj):
+        return getattr(obj.profile, 'avatar', None) if hasattr(obj, 'profile') else None
+
+    def get_website(self, obj):
+        return getattr(obj.profile, 'website', None) if hasattr(obj, 'profile') else None
+
+    def get_location(self, obj):
+        return getattr(obj.profile, 'location', None) if hasattr(obj, 'profile') else None
+
+    def get_followers_count(self, obj):
+        return getattr(obj.profile, 'followers_count', 0) if hasattr(obj, 'profile') else 0
+
+    def get_following_count(self, obj):
+        return getattr(obj.profile, 'following_count', 0) if hasattr(obj, 'profile') else 0
+
+    def get_posts_count(self, obj):
+        return getattr(obj.profile, 'posts_count', 0) if hasattr(obj, 'profile') else 0
+
+    def get_is_private(self, obj):
+        return getattr(obj.profile, 'is_private', False) if hasattr(obj, 'profile') else False
 
 class UserDetailSerializer(serializers.ModelSerializer):
-    profile = UserProfileSerializer()
+    # Flatten profile fields with proper null handling
+    bio = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+    website = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    posts_count = serializers.SerializerMethodField()
+    is_private = serializers.SerializerMethodField()
+
     points = serializers.SerializerMethodField()
     level = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'is_verified', 'is_creator',
-                  'profile', 'points', 'level', 'created_at']
+        fields = ['id', 'username', 'email', 'bio', 'avatar', 'website', 'location',
+                  'followers_count', 'following_count', 'posts_count', 'is_private',
+                  'is_verified', 'is_creator', 'points', 'level', 'created_at']
+
+    def get_bio(self, obj):
+        return getattr(obj.profile, 'bio', None) if hasattr(obj, 'profile') else None
+
+    def get_avatar(self, obj):
+        return getattr(obj.profile, 'avatar', None) if hasattr(obj, 'profile') else None
+
+    def get_website(self, obj):
+        return getattr(obj.profile, 'website', None) if hasattr(obj, 'profile') else None
+
+    def get_location(self, obj):
+        return getattr(obj.profile, 'location', None) if hasattr(obj, 'profile') else None
+
+    def get_followers_count(self, obj):
+        return getattr(obj.profile, 'followers_count', 0) if hasattr(obj, 'profile') else 0
+
+    def get_following_count(self, obj):
+        return getattr(obj.profile, 'following_count', 0) if hasattr(obj, 'profile') else 0
+
+    def get_posts_count(self, obj):
+        return getattr(obj.profile, 'posts_count', 0) if hasattr(obj, 'profile') else 0
+
+    def get_is_private(self, obj):
+        return getattr(obj.profile, 'is_private', False) if hasattr(obj, 'profile') else False
 
     @extend_schema_field(serializers.DictField)
     def get_points(self, obj):

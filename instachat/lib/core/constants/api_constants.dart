@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 
 class ApiConstants {
   // Base URL - Auto-switching based on platform
-  // Default for physical device: 192.168.43.227
+  // Default for physical device: 10.129.254.167
   // (Change this to your computer's local IP if different)
-  static const String _localIp = '192.168.43.227';
+  static const String _localIp = '10.129.254.167';
 
   static String get baseUrl {
     if (kReleaseMode) {
@@ -18,7 +18,7 @@ class ApiConstants {
     // Safer default for emulator is 10.0.2.2 which maps to host localhost.
     if (!kIsWeb && Platform.isAndroid) {
       // return 'http://10.0.2.2:8000'; // for emulator
-      return 'http://192.168.43.227:8000'; // for physical device
+      return 'http://10.129.254.167:8000'; // for physical device
     }
 
     // For iOS Simulator, localhost works
@@ -37,7 +37,7 @@ class ApiConstants {
     if (kReleaseMode) return 'wss://api.production.com/ws';
     if (!kIsWeb && Platform.isAndroid) {
       // return 'ws://10.0.2.2:8002/ws'; // for emulator
-      return 'ws://192.168.43.227:8002/ws'; // for physical device
+      return 'ws://10.129.254.167:8002/ws'; // for physical device
     }
     if (!kIsWeb && Platform.isIOS) return 'ws://127.0.0.1:8002/ws';
     return 'ws://$_localIp:8002/ws';
@@ -50,7 +50,7 @@ class ApiConstants {
     if (kReleaseMode) return 'https://fastapi.production.com';
     if (!kIsWeb && Platform.isAndroid) {
       // return 'http://10.0.2.2:8001'; // for emulator
-      return 'http://192.168.43.227:8001'; // for physical device
+      return 'http://10.129.254.167:8001'; // for physical device
     }
     if (!kIsWeb && Platform.isIOS) return 'http://127.0.0.1:8001';
     return 'http://$_localIp:8001';
@@ -124,7 +124,8 @@ class ApiConstants {
   static String get pushTokens => '$apiBaseUrl/notifications/api/push-tokens/';
 
   // Notification Preferences Endpoints
-  static String get notificationPreferences => '$apiBaseUrl/notifications/api/preferences/';
+  static String get notificationPreferences =>
+      '$apiBaseUrl/notifications/api/preferences/';
 
   // Search Endpoints
   // Search Endpoints

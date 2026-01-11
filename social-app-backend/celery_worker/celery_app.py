@@ -1,8 +1,13 @@
 from celery import Celery
 from celery.schedules import crontab
 import os
+import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
+# Set the Django settings module
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_core.config.settings.development')
+
+# Setup Django
+django.setup()
 
 app = Celery('social_app')
 app.config_from_object('django.conf:settings', namespace='CELERY')
