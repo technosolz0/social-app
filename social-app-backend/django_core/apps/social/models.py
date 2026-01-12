@@ -68,6 +68,7 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+
     class Meta:
         db_table = 'comments'
         ordering = ['-created_at']
@@ -75,3 +76,59 @@ class Comment(models.Model):
             models.Index(fields=['post', '-created_at']),
             models.Index(fields=['user', '-created_at']),
         ]
+
+class Report(models.Model):
+    REPORT_CATEGORIES = [
+        ('spam', 'Spam'),
+        ('harassment', 'Harassment'),
+        ('inappropriate', 'Inappropriate Content'),
+        ('misinformation', 'Misinformation'),
+        ('hate_speech', 'Hate Speech'),
+        ('violence', 'Violence'),
+        ('other', 'Other'),
+    ]
+    
+    REPORT_STATUS = [
+        ('pending', 'Pending'),
+        ('reviewed', 'Reviewed'),
+        ('resolved', 'Resolved'),
+        ('dismissed', 'Dismissed'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    reporter = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reports_made')
+    
+    # Generic relation to support reporting posts, comments, and user profiles
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.UUIDField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    
+    category = models.CharField(max_length=20, choices=REPORT_CATEGORIES)
+    description = models.TextField(blank=True, max_length=500)
+    status = models.CharField(max_length=20, choices=REPORT_STATUS, default='pending')
+    
+    # Moderation fields
+    reviewed_by = models.ForeignKey(
+        CustomUser, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='reports_reviewed'
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    moderator_notes = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'reports'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['reporter', '-created_at']),
+            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['content_type', 'object_id']),
+        ]
+    
+    def __str__(self):
+        return f"Report by {self.reporter.username} - {self.category} ({self.status})"

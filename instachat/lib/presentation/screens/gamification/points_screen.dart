@@ -59,7 +59,10 @@ class PointsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPointsContent(BuildContext context, gamification) {
+  Widget _buildPointsContent(
+    BuildContext context,
+    GamificationState gamification,
+  ) {
     final currentLevel = gamification.currentLevel;
     final totalPoints = gamification.totalPoints;
     final pointsForCurrentLevel =

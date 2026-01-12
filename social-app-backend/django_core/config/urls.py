@@ -7,7 +7,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 # Import ViewSets
 from apps.users.views import UserViewSet
 from apps.content.views import PostViewSet, StoryViewSet
-from apps.social.views import FollowViewSet, LikeViewSet, CommentViewSet
+from apps.social.views import FollowViewSet, LikeViewSet, CommentViewSet, ReportViewSet
 from apps.gamification.views import GamificationViewSet
 from apps.activities.views import ActivityViewSet
 
@@ -18,6 +18,7 @@ router.register(r'posts', PostViewSet, basename='post')
 router.register(r'stories', StoryViewSet, basename='story')
 router.register(r'follows', FollowViewSet, basename='follow')
 router.register(r'comments', CommentViewSet, basename='comment')
+router.register(r'reports', ReportViewSet, basename='report')
 router.register(r'gamification', GamificationViewSet, basename='gamification')
 router.register(r'activities', ActivityViewSet, basename='activity')
 
@@ -34,6 +35,7 @@ def api_root(request):
         'endpoints': {
             'users': '/api/v1/users/',
             'posts': '/api/v1/posts/',
+            'reports': '/api/v1/reports/',
             'chat': '/api/v1/chat/',
             'gamification': '/api/v1/gamification/',
             'activities': '/api/v1/activities/',

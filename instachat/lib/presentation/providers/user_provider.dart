@@ -3,17 +3,22 @@ import '../../data/models/user_model.dart';
 import '../../data/services/api_service.dart';
 import '../../data/services/cache_service.dart';
 
-final userProvider = StateNotifierProvider.family<UserNotifier, AsyncValue<UserModel>, String>((ref, userId) {
-  final cacheService = CacheService();
-  return UserNotifier(cacheService, userId);
-});
+final userProvider =
+    StateNotifierProvider.family<UserNotifier, AsyncValue<UserModel>, String>((
+      ref,
+      userId,
+    ) {
+      final cacheService = CacheService();
+      return UserNotifier(cacheService, userId);
+    });
 
 class UserNotifier extends StateNotifier<AsyncValue<UserModel>> {
   final ApiService _apiService = ApiService();
   final CacheService _cacheService;
   final String _userId;
 
-  UserNotifier(this._cacheService, this._userId) : super(const AsyncValue.loading()) {
+  UserNotifier(this._cacheService, this._userId)
+    : super(const AsyncValue.loading()) {
     loadUser();
   }
 
@@ -38,10 +43,14 @@ class UserNotifier extends StateNotifier<AsyncValue<UserModel>> {
     try {
       state = const AsyncValue.loading();
       final user = await _apiService.getUserById(_userId);
-      
+
       // 3. Update Cache
-      await _cacheService.set(cacheKey, user.toJson(), duration: const Duration(hours: 1));
-      
+      await _cacheService.set(
+        cacheKey,
+        user.toJson(),
+        duration: const Duration(hours: 1),
+      );
+
       state = AsyncValue.data(user);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -54,9 +63,9 @@ class UserNotifier extends StateNotifier<AsyncValue<UserModel>> {
       // Update local state optimistically
       if (state.hasValue) {
         final currentUser = state.value!;
-        state = AsyncValue.data(currentUser.copyWith(
-          followersCount: currentUser.followersCount + 1,
-        ));
+        state = AsyncValue.data(
+          currentUser.copyWith(followersCount: currentUser.followersCount + 1),
+        );
       }
       // Refresh from server in background
       loadUser(forceRefresh: true);
@@ -71,14 +80,27 @@ class UserNotifier extends StateNotifier<AsyncValue<UserModel>> {
       // Update local state optimistically
       if (state.hasValue) {
         final currentUser = state.value!;
-        state = AsyncValue.data(currentUser.copyWith(
-          followersCount: currentUser.followersCount - 1,
-        ));
+        state = AsyncValue.data(
+          currentUser.copyWith(
+            followersCount: currentUser.followersCount - 1,
+            isFollowing: false,
+          ),
+        );
       }
       // Refresh from server in background
       loadUser(forceRefresh: true);
     } catch (e) {
       // Handle error
+    }
+  }
+
+  Future<void> toggleFollow() async {
+    if (!state.hasValue) return;
+    final isFollowing = state.value!.isFollowing ?? false;
+    if (isFollowing) {
+      await unfollow();
+    } else {
+      await follow();
     }
   }
 }

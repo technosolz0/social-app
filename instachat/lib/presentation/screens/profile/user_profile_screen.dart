@@ -5,20 +5,44 @@ import '../../../core/constants/theme_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/conversations_provider.dart';
+import '../../widgets/gamification/points_notification_widget.dart';
+import '../../widgets/common/report_bottom_sheet.dart';
 
-class UserProfileScreen extends ConsumerWidget {
+class UserProfileScreen extends ConsumerStatefulWidget {
   final String userId;
 
   const UserProfileScreen({super.key, required this.userId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final userAsync = ref.watch(userProvider(userId));
+  ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
+  int? _gainedPoints;
+
+  void _showPoints(int points) {
+    if (mounted) {
+      setState(() {
+        _gainedPoints = points;
+      });
+    }
+  }
+
+  void _hidePoints() {
+    if (mounted) {
+      setState(() {
+        _gainedPoints = null;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final userAsync = ref.watch(userProvider(widget.userId));
     final currentUserId = ref.read(authNotifierProvider).user?.id;
 
-    if (currentUserId == userId) {
-      // If it's the current user, we should probably redirect or show ProfileScreen
-      // For now just show the profile
+    if (currentUserId == widget.userId) {
+      // Logic to redirect or show own profile could go here
     }
 
     return Scaffold(
@@ -35,31 +59,34 @@ class UserProfileScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: () {
-              // Show more options for this user (report, block, etc.)
+              ReportBottomSheet.show(context, 'user', widget.userId);
             },
           ),
         ],
       ),
-      body: userAsync.when(
-        data: (user) => SingleChildScrollView(
-          child: Column(
-            children: [
-              // Profile Header
-              _buildProfileHeader(user),
-
-              // Stats
-              _buildStats(user),
-
-              // Action Buttons
-              _buildActionButtons(context, ref, user),
-
-              // Posts Grid
-              _buildPostsGrid(),
-            ],
+      body: Stack(
+        children: [
+          userAsync.when(
+            data: (user) => SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildProfileHeader(user),
+                  _buildStats(user),
+                  _buildActionButtons(context, ref, user),
+                  _buildPostsGrid(user),
+                ],
+              ),
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Center(child: Text('Error: $error')),
           ),
-        ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+
+          if (_gainedPoints != null)
+            PointsNotificationWidget(
+              points: _gainedPoints!,
+              onFinished: _hidePoints,
+            ),
+        ],
       ),
     );
   }
@@ -69,7 +96,6 @@ class UserProfileScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(AppSizes.paddingLarge),
       child: Column(
         children: [
-          // Avatar
           CircleAvatar(
             radius: 50,
             backgroundColor: Colors.grey[300],
@@ -77,34 +103,20 @@ class UserProfileScreen extends ConsumerWidget {
                 ? NetworkImage(user.avatar!)
                 : null,
             child: user.avatar == null
-                ? const Icon(
-                    Icons.person,
-                    size: 50,
-                    color: Colors.grey,
-                  )
+                ? const Icon(Icons.person, size: 50, color: Colors.grey)
                 : null,
           ),
-
           const SizedBox(height: AppSizes.paddingMedium),
-
-          // Name and Username
           Text(
             user.username,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-
           if (user.bio != null && user.bio!.isNotEmpty) ...[
             const SizedBox(height: AppSizes.paddingSmall),
             Text(
               user.bio!,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
           ],
         ],
@@ -131,57 +143,98 @@ class UserProfileScreen extends ConsumerWidget {
       children: [
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
       ],
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, WidgetRef ref, dynamic user) {
+  Widget _buildActionButtons(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic user,
+  ) {
+    final isFollowing = user.isFollowing ?? false;
+    final isLoading = ref.watch(userProvider(widget.userId)).isLoading;
+
     return Padding(
       padding: const EdgeInsets.all(AppSizes.paddingLarge),
       child: Row(
         children: [
           Expanded(
             child: ElevatedButton(
-              onPressed: () {
-                // Toggle follow
-                // This logic would be in userProvider
-              },
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      if (isFollowing) {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text('Unfollow ${user.username}?'),
+                            content: const Text(
+                              'Are you sure you want to unfollow this user?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.red,
+                                ),
+                                child: const Text('Unfollow'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm != true) return;
+                      }
+
+                      await ref
+                          .read(userProvider(widget.userId).notifier)
+                          .toggleFollow();
+                      if (!isFollowing) {
+                        _showPoints(10); // Award 10 points for following
+                      }
+                    },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
+                backgroundColor: isFollowing ? Colors.grey[300] : Colors.blue,
+                foregroundColor: isFollowing ? Colors.black : Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+                  borderRadius: BorderRadius.circular(
+                    AppSizes.borderRadiusMedium,
+                  ),
                 ),
               ),
-              child: const Text('Follow'),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(isFollowing ? 'Following' : 'Follow'),
             ),
           ),
           const SizedBox(width: AppSizes.paddingMedium),
           Expanded(
             child: OutlinedButton(
               onPressed: () async {
-                // Start chat
-                final convId = await ref.read(conversationsProvider.notifier).createConversation(user.id);
+                final convId = await ref
+                    .read(conversationsProvider.notifier)
+                    .createConversation(user.id);
                 if (convId != null && context.mounted) {
                   context.push('/chat/$convId');
                 }
               },
               style: OutlinedButton.styleFrom(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+                  borderRadius: BorderRadius.circular(
+                    AppSizes.borderRadiusMedium,
+                  ),
                 ),
               ),
               child: const Text('Message'),
@@ -192,10 +245,7 @@ class UserProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPostsGrid() {
-    // Mock posts data
-    final posts = List.generate(9, (index) => 'Post ${index + 1}');
-
+  Widget _buildPostsGrid(dynamic user) {
     return Column(
       children: [
         const Divider(),
@@ -207,17 +257,11 @@ class UserProfileScreen extends ConsumerWidget {
             crossAxisSpacing: 2,
             mainAxisSpacing: 2,
           ),
-          itemCount: posts.length,
+          itemCount: 9,
           itemBuilder: (context, index) {
             return Container(
               color: Colors.grey[300],
-              child: Image.network(
-                'https://picsum.photos/200/200?random=${index + 100}',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.image, color: Colors.grey);
-                },
-              ),
+              child: const Icon(Icons.image, color: Colors.grey),
             );
           },
         ),

@@ -10,6 +10,9 @@ POINTS_CONFIG = {
     'upload_post': 50,
     'get_like': 1,
     'get_comment': 5,
+    'comment_post': 2,      # New: points for commenting
+    'reply_comment': 2,     # New: points for replying
+    'follow_user': 10,      # New: points for following someone
     'daily_login': 10,
     'use_filter': 15,
     'invite_friend': 100,
@@ -27,14 +30,31 @@ LEVEL_THRESHOLDS = {
 def award_points(user_id, action_type, points=None):
     """Award points to user for actions"""
     from apps.users.models import CustomUser
-    from apps.gamification.models import UserPoints, PointsTransaction, UserLevel
+    from apps.gamification.models import UserPoints, PointsTransaction, UserLevel, GamificationConfig
 
     try:
         user = CustomUser.objects.get(id=user_id)
         user_points, _ = UserPoints.objects.get_or_create(user=user)
 
-        # Get points from config if not provided
-        points_to_award = points or POINTS_CONFIG.get(action_type, 0)
+        # Get points from dynamic config if not provided explicitly
+        points_to_award = points
+        
+        if points_to_award is None:
+            # Try to get from database config first
+            try:
+                config = GamificationConfig.objects.get(key=action_type, is_active=True)
+                points_to_award = config.points
+            except GamificationConfig.DoesNotExist:
+                # Fallback to static config
+                points_to_award = POINTS_CONFIG.get(action_type, 0)
+                
+                # Auto-create config entry for future use if it doesn't exist at all
+                if not GamificationConfig.objects.filter(key=action_type).exists():
+                    GamificationConfig.objects.create(
+                        key=action_type,
+                        points=POINTS_CONFIG.get(action_type, 0),
+                        description=f"Points for {action_type}"
+                    )
 
         # Create transaction
         PointsTransaction.objects.create(

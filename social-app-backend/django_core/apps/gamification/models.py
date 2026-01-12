@@ -23,6 +23,9 @@ class PointsTransaction(models.Model):
         ('upload_post', 'Upload Post'),
         ('get_like', 'Received Like'),
         ('get_comment', 'Received Comment'),
+        ('comment_post', 'Comment on Post'),
+        ('reply_comment', 'Reply to Comment'),
+        ('follow_user', 'Follow User'),
         ('daily_login', 'Daily Login'),
         ('use_filter', 'Use Filter'),
         ('invite_friend', 'Invite Friend'),
@@ -125,3 +128,20 @@ class UserQuest(models.Model):
     class Meta:
         db_table = 'user_quests'
         unique_together = ('user', 'quest')
+
+class GamificationConfig(models.Model):
+    """Configuration for gamification points"""
+    key = models.CharField(max_length=50, unique=True, help_text="Action key, e.g. upload_post")
+    points = models.IntegerField(default=0, help_text="Points awarded for this action")
+    description = models.CharField(max_length=200, blank=True)
+    is_active = models.BooleanField(default=True)
+    
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'gamification_config'
+        verbose_name = 'Gamification Configuration'
+        verbose_name_plural = 'Gamification Configurations'
+    
+    def __str__(self):
+        return f"{self.key}: {self.points} pts"

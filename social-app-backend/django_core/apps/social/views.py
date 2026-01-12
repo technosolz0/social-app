@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.contenttypes.models import ContentType
-from .models import Follow, Like, Comment
+from .models import Follow, Like, Comment, Report
 from .serializers import FollowSerializer, LikeSerializer, CommentSerializer
 from apps.users.models import CustomUser
 
@@ -173,6 +173,17 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(user=request.user)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['get'])
+    def replies(self, request, pk=None):
+        """Get replies for a specific comment"""
+        comment = self.get_object()
+        replies = Comment.objects.filter(
+            parent=comment
+        ).select_related('user__profile').order_by('created_at')
+        
+        serializer = self.get_serializer(replies, many=True, context={'request': request})
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def like(self, request, pk=None):
@@ -212,3 +223,73 @@ class CommentViewSet(viewsets.ModelViewSet):
             comment.save()
 
         return Response({'message': 'Unliked successfully'})
+
+class ReportViewSet(viewsets.ModelViewSet):
+    """ViewSet for handling content reports"""
+    queryset = Report.objects.select_related('reporter__profile').all()
+    permission_classes = [IsAuthenticated]
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            from .serializers import ReportCreateSerializer
+            return ReportCreateSerializer
+        from .serializers import ReportSerializer
+        return ReportSerializer
+    
+    def get_queryset(self):
+        """Users can only see their own reports"""
+        if self.request.user.is_staff:
+            # Staff can see all reports
+            return super().get_queryset()
+        return super().get_queryset().filter(reporter=self.request.user)
+    
+    def create(self, request, *args, **kwargs):
+        """Create a new report"""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # Check if user already reported this content
+        content_type = serializer.validated_data['content_type']
+        object_id = serializer.validated_data['object_id']
+        
+        existing_report = Report.objects.filter(
+            reporter=request.user,
+            content_type=content_type,
+            object_id=object_id
+        ).first()
+        
+        if existing_report:
+            return Response(
+                {'error': 'You have already reported this content'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Save report with current user as reporter
+        report = serializer.save(reporter=request.user)
+        
+        # Return full report data
+        from .serializers import ReportSerializer
+        return Response(
+            ReportSerializer(report).data,
+            status=status.HTTP_201_CREATED
+        )
+    
+    @action(detail=False, methods=['get'])
+    def my_reports(self, request):
+        """Get current user's submitted reports"""
+        reports = self.get_queryset().filter(reporter=request.user)
+        serializer = self.get_serializer(reports, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def pending(self, request):
+        """Get pending reports (staff only)"""
+        if not request.user.is_staff:
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        reports = self.get_queryset().filter(status='pending')
+        serializer = self.get_serializer(reports, many=True)
+        return Response(serializer.data)

@@ -35,16 +35,33 @@ def handle_comment_created(sender, instance, created, **kwargs):
         Post.objects.filter(id=instance.post.id).update(
             comments_count=models.F('comments_count') + 1
         )
-        # Award points to post owner
+        
+        # Award points to post owner for receiving comment
         award_points.delay(
             user_id=str(instance.post.user.id),
             action_type='get_comment',
             points=5
         )
+        
+        # Award points to commenter for making comment/reply
+        if instance.parent:
+            # It's a reply
+            award_points.delay(
+                user_id=str(instance.user.id),
+                action_type='reply_comment',
+                points=2
+            )
+        else:
+            # It's a top-level comment
+            award_points.delay(
+                user_id=str(instance.user.id),
+                action_type='comment_post',
+                points=2
+            )
 
 @receiver(post_save, sender=Follow)
 def handle_follow_created(sender, instance, created, **kwargs):
-    """Update follower/following counts"""
+    """Update follower/following counts and award points"""
     if created:
         from apps.users.models import UserProfile
         # Update follower count
@@ -54,6 +71,13 @@ def handle_follow_created(sender, instance, created, **kwargs):
         # Update following count
         UserProfile.objects.filter(user=instance.follower).update(
             following_count=models.F('following_count') + 1
+        )
+        
+        # Award points to follower for following someone
+        award_points.delay(
+            user_id=str(instance.follower.id),
+            action_type='follow_user',
+            points=10
         )
 
 @receiver(post_delete, sender=Follow)

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (UserPoints, PointsTransaction, UserLevel,
-                     Badge, UserBadge, DailyQuest, UserQuest)
+                     Badge, UserBadge, DailyQuest, UserQuest, GamificationConfig)
 
 @admin.register(UserPoints)
 class UserPointsAdmin(admin.ModelAdmin):
@@ -52,3 +52,10 @@ class UserQuestAdmin(admin.ModelAdmin):
     list_filter = ['is_completed', 'created_at']
     search_fields = ['user__username', 'quest__title']
     raw_id_fields = ['user', 'quest']
+
+@admin.register(GamificationConfig)
+class GamificationConfigAdmin(admin.ModelAdmin):
+    list_display = ['key', 'points', 'description', 'is_active', 'updated_at']
+    list_editable = ['points', 'is_active']
+    search_fields = ['key', 'description']
+    ordering = ['key']

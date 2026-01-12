@@ -89,7 +89,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         if (mounted) {
           if (newPost != null) {
             // Track activity
-            ref.read(activityTrackerProvider.notifier).trackPostView(newPost.id);
+            ref
+                .read(activityTrackerProvider.notifier)
+                .trackPostView(newPost.id);
 
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Post created successfully!')),
@@ -104,9 +106,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating post: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error creating post: $e')));
       }
     } finally {
       if (mounted) {
@@ -157,7 +159,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                 Container(
                   height: 300,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+                    borderRadius: BorderRadius.circular(
+                      AppSizes.borderRadiusMedium,
+                    ),
                     image: DecorationImage(
                       image: FileImage(_selectedImage!),
                       fit: BoxFit.cover,
@@ -169,7 +173,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                   height: 300,
                   decoration: BoxDecoration(
                     color: Colors.black,
-                    borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+                    borderRadius: BorderRadius.circular(
+                      AppSizes.borderRadiusMedium,
+                    ),
                   ),
                   child: const Center(
                     child: Icon(
@@ -185,7 +191,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                   height: 200,
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+                    borderRadius: BorderRadius.circular(
+                      AppSizes.borderRadiusMedium,
+                    ),
                     border: Border.all(color: Colors.grey[300]!),
                   ),
                   child: Column(
@@ -225,14 +233,88 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               const SizedBox(height: AppSizes.paddingLarge),
 
               // Caption Input
-              TextField(
-                controller: _captionController,
-                maxLines: 5,
-                maxLength: 2200,
-                decoration: const InputDecoration(
-                  hintText: 'Write a caption...',
-                  border: OutlineInputBorder(),
-                ),
+              Stack(
+                children: [
+                  TextField(
+                    controller: _captionController,
+                    maxLines: 5,
+                    maxLength: 2200,
+                    decoration: const InputDecoration(
+                      hintText: 'Write a caption...',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (text) {
+                      setState(() {}); // Rebuild to update helpers
+                    },
+                  ),
+                  if (_captionController.text.endsWith('@'))
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: 150,
+                        color: Colors.white,
+                        child: ListView(
+                          children: ['user1', 'user2', 'user3'].map((user) {
+                            return ListTile(
+                              leading: const CircleAvatar(
+                                child: Icon(Icons.person),
+                              ),
+                              title: Text(user),
+                              onTap: () {
+                                setState(() {
+                                  _captionController.text += '$user ';
+                                  _captionController
+                                      .selection = TextSelection.fromPosition(
+                                    TextPosition(
+                                      offset: _captionController.text.length,
+                                    ),
+                                  );
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+
+              const SizedBox(height: AppSizes.paddingMedium),
+
+              // Location Tagging
+              ListTile(
+                leading: const Icon(Icons.location_on_outlined),
+                title: const Text('Add Location'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  // TODO: Implement location picker
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Location picker coming soon'),
+                    ),
+                  );
+                },
+              ),
+
+              const Divider(),
+
+              // Advanced Settings
+              ExpansionTile(
+                title: const Text('Advanced Settings'),
+                children: [
+                  SwitchListTile(
+                    value: true,
+                    title: const Text('Turn off commenting'),
+                    onChanged: (val) {},
+                  ),
+                  SwitchListTile(
+                    value: false,
+                    title: const Text('Hide like count'),
+                    onChanged: (val) {},
+                  ),
+                ],
               ),
 
               const SizedBox(height: AppSizes.paddingLarge),
@@ -243,7 +325,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                   padding: const EdgeInsets.all(AppSizes.paddingMedium),
                   decoration: BoxDecoration(
                     color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
+                    borderRadius: BorderRadius.circular(
+                      AppSizes.borderRadiusMedium,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

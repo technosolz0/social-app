@@ -423,7 +423,7 @@ class ApiService {
 
   Future<List<PostModel>> getUserPosts(String userId, {int page = 1}) async {
     final response = await _dio.get(
-      ApiConstants.userById(userId) + 'posts/',
+      '${ApiConstants.userById(userId)}posts/',
       queryParameters: {'page': page},
     );
     final List<dynamic> data = response.data['results'] ?? response.data;
@@ -584,6 +584,13 @@ class ApiService {
     await _dio.delete('${ApiConstants.apiBaseUrl}/comments/$commentId/like/');
   }
 
+  Future<List<dynamic>> getCommentReplies(String commentId) async {
+    final response = await _dio.get(
+      '${ApiConstants.apiBaseUrl}/comments/$commentId/replies/',
+    );
+    return response.data;
+  }
+
   // ===========================================================================
   // CHAT METHODS
   // ===========================================================================
@@ -736,6 +743,21 @@ class ApiService {
     final response = await _dio.get(
       ApiConstants.search,
       queryParameters: {'q': query, 'type': type},
+    );
+    return response.data;
+  }
+
+  Future<dynamic> customRequest({
+    required String method,
+    required String path,
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final response = await _dio.request(
+      path.startsWith('http') ? path : '${ApiConstants.apiBaseUrl}$path',
+      data: data,
+      queryParameters: queryParameters,
+      options: Options(method: method),
     );
     return response.data;
   }
@@ -930,7 +952,7 @@ class ApiService {
     String? osVersion,
   }) async {
     await _dio.post(
-      ApiConstants.pushTokens + 'register/',
+      '${ApiConstants.pushTokens}register/',
       data: {
         'token': token,
         'device_type': deviceType,
@@ -943,7 +965,7 @@ class ApiService {
 
   Future<void> unregisterPushToken({String? deviceId}) async {
     final data = deviceId != null ? {'device_id': deviceId} : {};
-    await _dio.post(ApiConstants.pushTokens + 'unregister/', data: data);
+    await _dio.post('${ApiConstants.pushTokens}unregister/', data: data);
   }
 
   Future<Map<String, dynamic>> getNotificationPreferences() async {
@@ -955,7 +977,7 @@ class ApiService {
     Map<String, dynamic> preferences,
   ) async {
     final response = await _dio.post(
-      ApiConstants.notificationPreferences + 'update_preferences/',
+      '${ApiConstants.notificationPreferences}update_preferences/',
       data: preferences,
     );
     return response.data;
@@ -967,7 +989,7 @@ class ApiService {
     String? endTime,
   }) async {
     final response = await _dio.post(
-      ApiConstants.notificationPreferences + 'update_quiet_hours/',
+      '${ApiConstants.notificationPreferences}update_quiet_hours/',
       data: {
         'quiet_hours_enabled': enabled,
         'quiet_hours_start': startTime,
@@ -978,21 +1000,13 @@ class ApiService {
   }
 
   // ===========================================================================
-  // CUSTOM REQUEST METHODS
+  // GAMIFICATION METHODS
   // ===========================================================================
 
-  Future<Response> customRequest({
-    required String method,
-    required String path,
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-  }) async {
-    final options = Options(method: method);
-    return _dio.request(
-      path,
-      data: data,
-      queryParameters: queryParameters,
-      options: options,
+  Future<Map<String, dynamic>> getUserPoints() async {
+    final response = await _dio.get(
+      '${ApiConstants.apiBaseUrl}/gamification/my_stats/',
     );
+    return response.data;
   }
 }

@@ -13,6 +13,7 @@ class UserModel {
   final bool isVerified;
   final bool isPrivate;
   final GamificationModel? gamification;
+  final bool? isFollowing;
 
   const UserModel({
     required this.id,
@@ -27,6 +28,7 @@ class UserModel {
     this.isVerified = false,
     this.isPrivate = false,
     this.gamification,
+    this.isFollowing,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -43,8 +45,11 @@ class UserModel {
       isVerified: json['isVerified'] as bool? ?? false,
       isPrivate: json['isPrivate'] as bool? ?? false,
       gamification: json['gamification'] != null
-          ? GamificationModel.fromJson(json['gamification'] as Map<String, dynamic>)
+          ? GamificationModel.fromJson(
+              json['gamification'] as Map<String, dynamic>,
+            )
           : null,
+      isFollowing: json['is_following'] as bool?,
     );
   }
 
@@ -62,6 +67,7 @@ class UserModel {
       'isVerified': isVerified,
       'isPrivate': isPrivate,
       'gamification': gamification?.toJson(),
+      'is_following': isFollowing,
     };
   }
 
@@ -78,6 +84,7 @@ class UserModel {
     bool? isVerified,
     bool? isPrivate,
     GamificationModel? gamification,
+    bool? isFollowing,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -92,6 +99,7 @@ class UserModel {
       isVerified: isVerified ?? this.isVerified,
       isPrivate: isPrivate ?? this.isPrivate,
       gamification: gamification ?? this.gamification,
+      isFollowing: isFollowing ?? this.isFollowing,
     );
   }
 }

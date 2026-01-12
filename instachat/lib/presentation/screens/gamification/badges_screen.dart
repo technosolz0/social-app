@@ -61,7 +61,7 @@ class BadgesScreen extends ConsumerWidget {
 
   Widget _buildBadgesContent(
     BuildContext context,
-    GamificationModel gamification,
+    GamificationState gamification,
   ) {
     if (gamification.badges.isEmpty) {
       return Center(
